@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Eye, Bug, Building2, Globe, AlertTriangle, 
   CheckCircle, Wand2, Shield, Zap, LayoutGrid,
   Code, FileText, Settings, Lock, Copy, Check,
-  ChevronDown, Sparkles, X
+  ChevronDown, Sparkles, X, PenLine, Search,
+  PanelLeft, Layers, Terminal as TerminalIcon
 } from 'lucide-react';
 import { templates, llmPresets, categories, Template, LLMPreset, TemplateVariable } from '@/data/templates';
+import { useTheme, Theme } from '@/context/ThemeContext';
 
 const iconMap: Record<string, React.ElementType> = {
   Eye, Bug, Building2, Globe, AlertTriangle, 
@@ -15,7 +17,348 @@ const iconMap: Record<string, React.ElementType> = {
   Code, FileText, Settings, Lock
 };
 
+// Theme toggle component
+function ThemeToggle({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
+  const themes: { id: Theme; label: string; icon: React.ElementType }[] = [
+    { id: 'brutalist', label: 'BRUTAL', icon: Layers },
+    { id: 'minimal', label: 'MINIMAL', icon: Sparkles },
+    { id: 'terminal', label: 'TERMINAL', icon: TerminalIcon },
+  ];
+
+  return (
+    <div className="theme-toggle">
+      {themes.map((t) => {
+        const Icon = t.icon;
+        return (
+          <button
+            key={t.id}
+            onClick={() => setTheme(t.id)}
+            className={`theme-btn ${theme === t.id ? 'active' : ''}`}
+          >
+            <Icon className="w-4 h-4" />
+            <span>{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================
+// BRUTALIST THEME COMPONENTS
+// ============================================
+function BrutalistHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
+  return (
+    <header className="brutalist-header">
+      <div className="brutalist-title">
+        <div className="brutalist-logo">PL</div>
+        <div>
+          <h1>PROMPT_LIBRARY</h1>
+          <p>JOUDANLABS_v1.0</p>
+        </div>
+      </div>
+      <ThemeToggle theme={theme} setTheme={setTheme} />
+      <div className="brutalist-tabs">
+        <button
+          onClick={() => setActiveMode('templates')}
+          className={activeMode === 'templates' ? 'active' : ''}
+        >
+          [TEMPLATES]
+        </button>
+        <button
+          onClick={() => setActiveMode('custom')}
+          className={activeMode === 'custom' ? 'active' : ''}
+        >
+          [CUSTOM_PROMPT]
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function BrutalistTemplateCard({ template, selected, onClick }: any) {
+  const Icon = iconMap[template.icon] || Code;
+  return (
+    <button
+      onClick={onClick}
+      className={`brutalist-card ${selected ? 'selected' : ''}`}
+    >
+      <div className="brutalist-card-icon">
+        <Icon className="w-6 h-6" />
+      </div>
+      <div className="brutalist-card-content">
+        <h3>{template.name}</h3>
+        <p>{template.description}</p>
+        <span className="brutalist-tag">[{template.category.toUpperCase()}]</span>
+      </div>
+    </button>
+  );
+}
+
+function BrutalistVariableInput({ variable, value, onChange }: any) {
+  if (variable.type === 'select') {
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(variable.name, e.target.value)}
+        className="brutalist-input"
+      >
+        <option value="">[{variable.placeholder.toUpperCase()}]</option>
+        {variable.options?.map((option: string) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    );
+  }
+  if (variable.type === 'textarea') {
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(variable.name, e.target.value)}
+        placeholder={variable.placeholder}
+        rows={4}
+        className="brutalist-input brutalist-textarea"
+      />
+    );
+  }
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(variable.name, e.target.value)}
+      placeholder={variable.placeholder}
+      className="brutalist-input"
+    />
+  );
+}
+
+// ============================================
+// MINIMAL THEME COMPONENTS  
+// ============================================
+function MinimalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
+  return (
+    <header className="minimal-header">
+      <div className="minimal-title">
+        <div className="minimal-logo">
+          <Sparkles className="w-6 h-6" />
+        </div>
+        <div>
+          <h1>Prompt Library</h1>
+          <p>JourdanLabs</p>
+        </div>
+      </div>
+      <ThemeToggle theme={theme} setTheme={setTheme} />
+      <div className="minimal-tabs">
+        <button
+          onClick={() => setActiveMode('templates')}
+          className={activeMode === 'templates' ? 'active' : ''}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          Templates
+        </button>
+        <button
+          onClick={() => setActiveMode('custom')}
+          className={activeMode === 'custom' ? 'active' : ''}
+        >
+          <PenLine className="w-4 h-4" />
+          Custom Prompt
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function MinimalTemplateCard({ template, selected, onClick }: any) {
+  const Icon = iconMap[template.icon] || Code;
+  return (
+    <button
+      onClick={onClick}
+      className={`minimal-card ${selected ? 'selected' : ''}`}
+    >
+      <div className={`minimal-card-icon ${selected ? 'active' : ''}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="minimal-card-content">
+        <h3>{template.name}</h3>
+        <p>{template.description}</p>
+        <span className="minimal-tag">{template.category}</span>
+      </div>
+    </button>
+  );
+}
+
+function MinimalVariableInput({ variable, value, onChange }: any) {
+  if (variable.type === 'select') {
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(variable.name, e.target.value)}
+        className="minimal-input"
+      >
+        <option value="">{variable.placeholder}</option>
+        {variable.options?.map((option: string) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    );
+  }
+  if (variable.type === 'textarea') {
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(variable.name, e.target.value)}
+        placeholder={variable.placeholder}
+        rows={4}
+        className="minimal-input minimal-textarea"
+      />
+    );
+  }
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(variable.name, e.target.value)}
+      placeholder={variable.placeholder}
+      className="minimal-input"
+    />
+  );
+}
+
+// ============================================
+// TERMINAL THEME COMPONENTS
+// ============================================
+function TerminalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
+  return (
+    <header className="terminal-header">
+      <div className="terminal-title">
+        <TerminalIcon className="w-5 h-5" />
+        <span>Prompt Library — ~</span>
+      </div>
+      <ThemeToggle theme={theme} setTheme={setTheme} />
+      <div className="terminal-tabs">
+        <button
+          onClick={() => setActiveMode('templates')}
+          className={activeMode === 'templates' ? 'active' : ''}
+        >
+          ▶ templates/
+        </button>
+        <button
+          onClick={() => setActiveMode('custom')}
+          className={activeMode === 'custom' ? 'active' : ''}
+        >
+          ▶ optimize/
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function TerminalSidebar({ categories, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery }: any) {
+  return (
+    <div className="terminal-sidebar">
+      <div className="terminal-search">
+        <Search className="w-4 h-4" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search..."
+        />
+      </div>
+      <div className="terminal-tree">
+        <div className="tree-header">
+          <ChevronDown className="w-3 h-3" />
+          <span>EXPLORER</span>
+        </div>
+        <div className="tree-item root">
+          <PanelLeft className="w-3 h-3" />
+          <span>PROMPTS</span>
+        </div>
+        {categories.filter((c: any) => c.id !== 'all').map((category: any) => (
+          <div key={category.id} className="tree-item">
+            <span className={`tree-arrow ${selectedCategory === category.id ? 'active' : ''}`}>▶</span>
+            <span 
+              className={selectedCategory === category.id ? 'active' : ''}
+              onClick={() => setSelectedCategory(category.id)}
+            >
+              {category.name.toUpperCase()}/
+            </span>
+          </div>
+        ))}
+        <div 
+          className={`tree-item ${selectedCategory === 'all' ? 'active' : ''}`}
+          onClick={() => setSelectedCategory('all')}
+        >
+          <span className="tree-arrow">{selectedCategory === 'all' ? '▼' : '▶'}</span>
+          <span>ALL_TEMPLATES</span>
+        </div>
+      </div>
+      <div className="terminal-footer">
+        <span>main*</span>
+      </div>
+    </div>
+  );
+}
+
+function TerminalTemplateCard({ template, selected, onClick }: any) {
+  const Icon = iconMap[template.icon] || Code;
+  return (
+    <button
+      onClick={onClick}
+      className={`terminal-card ${selected ? 'selected' : ''}`}
+    >
+      <span className="terminal-card-icon">
+        <Icon className="w-4 h-4" />
+      </span>
+      <span className="terminal-card-name">{template.name}</span>
+      <span className="terminal-card-category">{template.category}</span>
+    </button>
+  );
+}
+
+function TerminalVariableInput({ variable, value, onChange }: any) {
+  if (variable.type === 'select') {
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(variable.name, e.target.value)}
+        className="terminal-input"
+      >
+        <option value="">{variable.placeholder}</option>
+        {variable.options?.map((option: string) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    );
+  }
+  if (variable.type === 'textarea') {
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(variable.name, e.target.value)}
+        placeholder={variable.placeholder}
+        rows={4}
+        className="terminal-input terminal-textarea"
+      />
+    );
+  }
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(variable.name, e.target.value)}
+      placeholder={variable.placeholder}
+      className="terminal-input"
+    />
+  );
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function PromptLibrary() {
+  const { theme, setTheme } = useTheme();
+  const [activeMode, setActiveMode] = useState<'templates' | 'custom'>('templates');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedLLM, setSelectedLLM] = useState<LLMPreset>(llmPresets[0]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -24,6 +367,13 @@ export default function PromptLibrary() {
   const [copied, setCopied] = useState(false);
   const [showLLMDropdown, setShowLLMDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [customTargetLlm, setCustomTargetLlm] = useState<string>('chatgpt');
+  const [optimizedPrompt, setOptimizedPrompt] = useState('');
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeError, setOptimizeError] = useState('');
+  const [copiedOptimized, setCopiedOptimized] = useState(false);
 
   const filteredTemplates = useMemo(() => {
     return templates.filter(template => {
@@ -47,15 +397,11 @@ export default function PromptLibrary() {
 
   const generatePrompt = () => {
     if (!selectedTemplate) return;
-
     let prompt = selectedTemplate.prompt;
-    
-    // Replace all variables in the prompt
     Object.entries(variableValues).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       prompt = prompt.replace(regex, value || `[${key}]`);
     });
-
     setGeneratedPrompt(prompt);
   };
 
@@ -66,285 +412,286 @@ export default function PromptLibrary() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const optimizePrompt = async () => {
+    if (!customPrompt.trim()) return;
+    setIsOptimizing(true);
+    setOptimizeError('');
+    setOptimizedPrompt('');
+    
+    try {
+      const response = await fetch('/api/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: customPrompt, targetLlm: customTargetLlm })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to optimize');
+      setOptimizedPrompt(data.optimizedPrompt);
+    } catch (err) {
+      setOptimizeError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  const copyOptimizedPrompt = async () => {
+    if (!optimizedPrompt) return;
+    await navigator.clipboard.writeText(optimizedPrompt);
+    setCopiedOptimized(true);
+    setTimeout(() => setCopiedOptimized(false), 2000);
+  };
+
+  // Render appropriate header based on theme
+  const renderHeader = () => {
+    const props = { activeMode, setActiveMode, theme, setTheme };
+    switch (theme) {
+      case 'brutalist': return <BrutalistHeader {...props} />;
+      case 'minimal': return <MinimalHeader {...props} />;
+      case 'terminal': return <TerminalHeader {...props} />;
+    }
+  };
+
+  // Render appropriate template card based on theme
+  const renderTemplateCard = (template: Template) => {
+    const props = { template, selected: selectedTemplate?.id === template.id, onClick: () => handleTemplateSelect(template) };
+    switch (theme) {
+      case 'brutalist': return <BrutalistTemplateCard {...props} />;
+      case 'minimal': return <MinimalTemplateCard {...props} />;
+      case 'terminal': return <TerminalTemplateCard {...props} />;
+    }
+  };
+
+  // Render appropriate variable input based on theme
   const renderVariableInput = (variable: TemplateVariable) => {
     const value = variableValues[variable.name] || '';
+    const props = { variable, value, onChange: handleVariableChange };
+    switch (theme) {
+      case 'brutalist': return <BrutalistVariableInput {...props} />;
+      case 'minimal': return <MinimalVariableInput {...props} />;
+      case 'terminal': return <TerminalVariableInput {...props} />;
+    }
+  };
+
+  // Render templates panel
+  const renderTemplatesPanel = () => {
+    const props = { categories, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery };
     
-    if (variable.type === 'select') {
-      return (
-        <select
-          value={value}
-          onChange={(e) => handleVariableChange(variable.name, e.target.value)}
-          className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-        >
-          <option value="">{variable.placeholder}</option>
-          {variable.options?.map(option => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      );
-    }
-
-    if (variable.type === 'textarea') {
-      return (
-        <textarea
-          value={value}
-          onChange={(e) => handleVariableChange(variable.name, e.target.value)}
-          placeholder={variable.placeholder}
-          rows={4}
-          className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none font-mono text-sm"
-        />
-      );
-    }
-
     return (
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => handleVariableChange(variable.name, e.target.value)}
-        placeholder={variable.placeholder}
-        className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-      />
+      <div className={`templates-panel ${theme}`}>
+        {theme === 'terminal' && <TerminalSidebar {...props} />}
+        <div className="templates-list">
+          {theme !== 'terminal' && (
+            <>
+              <div className={`search-box ${theme}`}>
+                <Search className="w-5 h-5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search templates..."
+                />
+              </div>
+              <div className={`categories ${theme}`}>
+                {categories.map(category => {
+                  const Icon = iconMap[category.icon] || LayoutGrid;
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`category-btn ${selectedCategory === category.id ? 'active' : ''} ${theme}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {category.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          <div className="template-cards">
+            {filteredTemplates.map(template => renderTemplateCard(template))}
+          </div>
+        </div>
+      </div>
     );
   };
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Prompt Library</h1>
-                <p className="text-sm text-slate-400">JourdanLabs</p>
-              </div>
-            </div>
-            <div className="text-sm text-slate-500">
-              Enterprise Prompt Engineering
-            </div>
+  // Render form panel
+  const renderFormPanel = () => {
+    if (!selectedTemplate) {
+      return (
+        <div className={`empty-state ${theme}`}>
+          <Sparkles className="w-16 h-16" />
+          <h3>Select a Template</h3>
+          <p>Choose a template from the list to get started.</p>
+        </div>
+      );
+    }
+
+    const Icon = iconMap[selectedTemplate.icon] || Code;
+
+    return (
+      <div className={`form-panel ${theme}`}>
+        <div className={`template-header ${theme}`}>
+          <Icon className="w-8 h-8" />
+          <div>
+            <h2>{selectedTemplate.name}</h2>
+            <p>{selectedTemplate.description}</p>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar - Template List */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Search */}
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search templates..."
-                className="w-full px-4 py-3 pl-10 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            </div>
-
-            {/* Categories */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map(category => {
-                const Icon = iconMap[category.icon] || LayoutGrid;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      selectedCategory === category.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {category.name}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Template Cards */}
-            <div className="space-y-3">
-              {filteredTemplates.map(template => {
-                const Icon = iconMap[template.icon] || Code;
-                return (
-                  <button
-                    key={template.id}
-                    onClick={() => handleTemplateSelect(template)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all ${
-                      selectedTemplate?.id === template.id
-                        ? 'bg-blue-600/20 border-blue-500'
-                        : 'bg-slate-900 border-slate-700 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        selectedTemplate?.id === template.id
-                          ? 'bg-blue-600'
-                          : 'bg-slate-800'
-                      }`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white truncate">{template.name}</h3>
-                        <p className="text-sm text-slate-400 line-clamp-2 mt-1">{template.description}</p>
-                        <span className="inline-block mt-2 text-xs px-2 py-1 bg-slate-800 rounded-full text-slate-400">
-                          {template.category}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right Panel - Form & Output */}
-          <div className="lg:col-span-8">
-            {selectedTemplate ? (
-              <div className="space-y-6">
-                {/* Template Header */}
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <div className="flex items-center gap-4 mb-4">
-                    {(() => {
-                      const Icon = iconMap[selectedTemplate.icon] || Code;
-                      return <Icon className="w-8 h-8 text-blue-400" />;
-                    })()}
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">{selectedTemplate.name}</h2>
-                      <p className="text-slate-400">{selectedTemplate.description}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Variable Form */}
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <h3 className="text-lg font-semibold text-white mb-4">Fill in Variables</h3>
-                  <div className="space-y-4">
-                    {selectedTemplate.variables.map(variable => (
-                      <div key={variable.name}>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                          {variable.label}
-                          {variable.required && <span className="text-red-400 ml-1">*</span>}
-                        </label>
-                        {renderVariableInput(variable)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* LLM Selection */}
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <h3 className="text-lg font-semibold text-white mb-4">Select LLM Preset</h3>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowLLMDropdown(!showLLMDropdown)}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white hover:border-slate-500 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center">
-                          <span className="text-xs font-bold">{selectedLLM.name.charAt(0)}</span>
-                        </div>
-                        <div className="text-left">
-                          <div className="font-medium">{selectedLLM.name}</div>
-                          <div className="text-xs text-slate-400">{selectedLLM.description}</div>
-                        </div>
-                      </div>
-                      <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${showLLMDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {showLLMDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-600 rounded-xl overflow-hidden z-10 shadow-xl">
-                        {llmPresets.map(llm => (
-                          <button
-                            key={llm.id}
-                            onClick={() => {
-                              setSelectedLLM(llm);
-                              setShowLLMDropdown(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-all ${
-                              selectedLLM.id === llm.id ? 'bg-slate-700' : ''
-                            }`}
-                          >
-                            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center">
-                              <span className="text-xs font-bold">{llm.name.charAt(0)}</span>
-                            </div>
-                            <div className="text-left">
-                              <div className="font-medium text-white">{llm.name}</div>
-                              <div className="text-xs text-slate-400">{llm.description}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Generate Button */}
-                <button
-                  onClick={generatePrompt}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-semibold text-white hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center gap-2 shadow-lg"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Generate Prompt
-                </button>
-
-                {/* Generated Output */}
-                {generatedPrompt && (
-                  <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 bg-slate-800/50 border-b border-slate-700">
-                      <h3 className="font-semibold text-white">Generated Prompt</h3>
-                      <button
-                        onClick={copyToClipboard}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-white transition-all"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="w-4 h-4 text-green-400" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                            Copy
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    <div className="p-6">
-                      <pre className="whitespace-pre-wrap text-sm text-slate-300 font-mono leading-relaxed">
-                        {generatedPrompt}
-                      </pre>
-                    </div>
-                  </div>
-                )}
+        <div className={`variables-section ${theme}`}>
+          <h3>Fill in Variables</h3>
+          <div className="variables-grid">
+            {selectedTemplate.variables.map(variable => (
+              <div key={variable.name} className="variable-field">
+                <label>
+                  {variable.label}
+                  {variable.required && <span className="required">*</span>}
+                </label>
+                {renderVariableInput(variable)}
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-                <div className="w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center mb-6">
-                  <Sparkles className="w-10 h-10 text-slate-500" />
+            ))}
+          </div>
+        </div>
+
+        <div className={`llm-section ${theme}`}>
+          <h3>Select LLM Preset</h3>
+          <div className="llm-dropdown">
+            <button
+              onClick={() => setShowLLMDropdown(!showLLMDropdown)}
+              className={`llm-selector ${theme}`}
+            >
+              <div className="llm-info">
+                <div className="llm-avatar">{selectedLLM.name.charAt(0)}</div>
+                <div>
+                  <div className="llm-name">{selectedLLM.name}</div>
+                  <div className="llm-desc">{selectedLLM.description}</div>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Select a Template</h3>
-                <p className="text-slate-400 max-w-md">
-                  Choose a template from the list to get started. Fill in the variables and generate prompts optimized for your preferred LLM.
-                </p>
+              </div>
+              <ChevronDown className={`w-5 h-5 ${showLLMDropdown ? 'rotate' : ''}`} />
+            </button>
+            {showLLMDropdown && (
+              <div className={`llm-menu ${theme}`}>
+                {llmPresets.map(llm => (
+                  <button
+                    key={llm.id}
+                    onClick={() => { setSelectedLLM(llm); setShowLLMDropdown(false); }}
+                    className={`llm-option ${selectedLLM.id === llm.id ? 'active' : ''}`}
+                  >
+                    <div className="llm-avatar">{llm.name.charAt(0)}</div>
+                    <div>
+                      <div className="llm-name">{llm.name}</div>
+                      <div className="llm-desc">{llm.description}</div>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
         </div>
+
+        <button onClick={generatePrompt} className={`generate-btn ${theme}`}>
+          <Sparkles className="w-5 h-5" />
+          Generate Prompt
+        </button>
+
+        {generatedPrompt && (
+          <div className={`output-panel ${theme}`}>
+            <div className={`output-header ${theme}`}>
+              <h3>Generated Prompt</h3>
+              <button onClick={copyToClipboard} className={`copy-btn ${theme}`}>
+                {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy</>}
+              </button>
+            </div>
+            <pre className="output-content">{generatedPrompt}</pre>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render custom prompt mode
+  const renderCustomMode = () => {
+    return (
+      <div className={`custom-panel ${theme}`}>
+        <div className={`custom-header ${theme}`}>
+          <Wand2 className="w-6 h-6" />
+          <div>
+            <h2>Optimize Your Prompt</h2>
+            <p>Get your prompt optimized for your target LLM</p>
+          </div>
+        </div>
+
+        <div className={`custom-form ${theme}`}>
+          <div className="form-field">
+            <label>Target LLM</label>
+            <select
+              value={customTargetLlm}
+              onChange={(e) => setCustomTargetLlm(e.target.value)}
+              className={`llm-select ${theme}`}
+            >
+              {llmPresets.map(llm => (
+                <option key={llm.id} value={llm.id}>{llm.name} - {llm.description}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label>Your Prompt</label>
+            <textarea
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              placeholder="Paste your prompt here that you want to optimize..."
+              rows={6}
+              className={`prompt-input ${theme}`}
+            />
+          </div>
+
+          <button
+            onClick={optimizePrompt}
+            disabled={!customPrompt.trim() || isOptimizing}
+            className={`optimize-btn ${theme}`}
+          >
+            {isOptimizing ? (
+              <><div className="spinner" /> Optimizing...</>
+            ) : (
+              <><Wand2 className="w-5 h-5" /> Optimize with AI</>
+            )}
+          </button>
+
+          {optimizeError && <div className={`error-msg ${theme}`}>{optimizeError}</div>}
+
+          {optimizedPrompt && (
+            <div className={`optimized-result ${theme}`}>
+              <div className={`result-header ${theme}`}>
+                <Sparkles className="w-5 h-5" />
+                <h3>Optimized Prompt</h3>
+                <button onClick={copyOptimizedPrompt} className={`copy-btn ${theme}`}>
+                  {copiedOptimized ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy</>}
+                </button>
+              </div>
+              <pre className="result-content">{optimizedPrompt}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={`app-container ${theme}`}>
+      {renderHeader()}
+      <main className={`main-content ${theme}`}>
+        {activeMode === 'templates' ? (
+          <div className={`templates-layout ${theme}`}>
+            {renderTemplatesPanel()}
+            {renderFormPanel()}
+          </div>
+        ) : (
+          renderCustomMode()
+        )}
       </main>
     </div>
-  );
-}
-
-function Search({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
   );
 }
