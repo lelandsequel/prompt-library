@@ -1,0 +1,115 @@
+# Documentation Generation Prompt v1.0.0
+
+id: docs-gen-v1
+name: Documentation Generation
+description: Generate comprehensive documentation from code or specifications
+category: docs
+role: technical writer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - documentation
+  - docs
+  - readme
+  - api-docs
+
+inputs:
+  - name: doc_type
+    label: Documentation Type
+    type: select
+    required: true
+    options:
+      - README
+      - API Documentation
+      - Code Comments
+      - Architecture Doc
+      - User Guide
+      - README
+
+  - name: language
+    label: Programming Language
+    type: text
+    required: false
+    placeholder: e.g., TypeScript, Python
+
+  - name: code_snippet
+    label: Code to Document
+    type: textarea
+    required: false
+    placeholder: Paste code to generate docs for...
+
+  - name: overview
+    label: Overview/Purpose
+    type: textarea
+    required: true
+    placeholder: Brief description of what needs documentation...
+
+  - name: audience
+    label: Target Audience
+    type: text
+    required: false
+    default: developers
+    placeholder: e.g., developers, end-users
+
+outputs:
+  - name: documentation
+    type: markdown
+    description: Generated documentation
+
+  - name: examples
+    type: markdown
+    description: Usage examples if applicable
+
+prompt: |
+  Generate {{doc_type}} documentation for the following:
+
+  {{#if code_snippet}}
+  Code:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+  {{/if}}
+
+  Overview:
+  {{overview}}
+
+  Target Audience: {{audience}}
+
+  Please provide well-structured, clear documentation.
+
+examples:
+  - name: readme_generation
+    inputs:
+      doc_type: README
+      overview: A Python library for processing CSV files
+      audience: developers
+    expected_output: Should include installation, usage, API reference
+
+  - name: api_docs
+    inputs:
+      doc_type: API Documentation
+      language: TypeScript
+      code_snippet: "function add(a: number, b: number): number { return a + b; }"
+    expected_output: Should include parameter types, return type, examples
+
+usage: Use to generate documentation from code or specifications.
+
+contexts:
+  - New project documentation
+  - API documentation
+  - Code commenting
+
+instructions:
+  - Use markdown formatting
+  - Include code examples
+  - Keep audience in mind
+
+dependencies: []

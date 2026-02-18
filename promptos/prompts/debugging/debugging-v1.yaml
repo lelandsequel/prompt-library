@@ -1,0 +1,135 @@
+# Debugging/Troubleshooting Prompt v1.0.0
+
+id: debugging-v1
+name: Debugging/Troubleshooting
+description: Diagnose and fix bugs with step-by-step analysis
+category: debugging
+role: expert software engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+  - cursor
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - debugging
+  - troubleshooting
+  - bug-fix
+  - error-resolution
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: framework
+    label: Framework (optional)
+    type: text
+    required: false
+    placeholder: e.g., Express, Flask, Spring
+
+  - name: error_message
+    label: Error Message
+    type: textarea
+    required: true
+    placeholder: Paste the error message here...
+
+  - name: code_snippet
+    label: Relevant Code
+    type: textarea
+    required: true
+    placeholder: Paste the relevant code section...
+
+  - name: context
+    label: What You Tried
+    type: textarea
+    required: false
+    placeholder: What have you already attempted?
+
+outputs:
+  - name: root_cause
+    type: text
+    description: Identified root cause of the bug
+
+  - name: explanation
+    type: markdown
+    description: Explanation of what's happening
+
+  - name: fix
+    type: code
+    description: Working fix with explanation
+
+  - name: prevention
+    type: markdown
+    description: Prevention strategies
+
+prompt: |
+  I need help debugging a {{language}} application{{#if framework}} using {{framework}}{{/if}}.
+
+  Error Message:
+  {{error_message}}
+
+  Relevant Code:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+
+  {{#if context}}
+  What I've Already Tried:
+  {{context}}
+  {{/if}}
+
+  Please help me:
+  1. Identify the root cause
+  2. Explain what's happening
+  3. Provide a fix with explanation
+  4. Suggest prevention strategies
+
+examples:
+  - name: javascript_error
+    inputs:
+      language: JavaScript
+      error_message: "TypeError: Cannot read property 'map' of undefined"
+      code_snippet: "const items = undefined;\nitems.map(i => i.name);"
+      context: Checked if data is loading
+    expected_output: Should identify undefined and suggest null check
+
+  - name: python_exception
+    inputs:
+      language: Python
+      error_message: "IndexError: list index out of range"
+      code_snippet: "items = [1, 2, 3]\nprint(items[5])"
+    expected_output: Should explain index bounds and suggest bounds checking
+
+usage: Use when encountering bugs or errors that need diagnosis and fixing.
+
+contexts:
+  - Development debugging
+  - Error investigation
+  - Bug fixing sessions
+
+instructions:
+  - Provide working code examples
+  - Explain the root cause clearly
+  - Suggest prevention strategies
+
+dependencies: []

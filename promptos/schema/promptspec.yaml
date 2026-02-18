@@ -1,0 +1,74 @@
+# PromptSpec Schema v1.0
+# Schema for defining prompts in the JourdanLabs Prompt Library
+
+# Core identity fields
+id: string              # Unique identifier (e.g., "code-review-v1")
+name: string            # Human-readable name (e.g., "Code Review")
+description: string     # Brief description of what the prompt does
+category: string        # Category (e.g., "codegen", "debugging", "docs", "sre", "architecture")
+role: string            # Role the LLM should assume (e.g., "expert software engineer")
+
+# Metadata
+model_compatibility:    # List of compatible models
+  - string              # e.g., ["claude-sonnet-4-6", "gpt-4o", "gemini-1.5-pro"]
+version: string         # Semantic version (e.g., "1.0.0")
+author: string          # Author name/identifier
+last_updated: string    # ISO 8601 timestamp (e.g., "2024-01-15T10:30:00Z")
+
+# Organization
+tags:                   # Searchable tags
+  - string              # e.g., ["code-review", "best-practices", "security"]
+
+# Input/output definitions
+inputs:                 # Required/variable inputs for the prompt
+  - name: string        # Variable name (e.g., "language")
+    label: string       # Human-readable label
+    type: string        # "text" | "textarea" | "select" | "number" | "boolean"
+    required: boolean   # Whether this input is required
+    default: string     # Optional default value
+    placeholder: string # Placeholder text
+    options:            # For select types
+      - string
+
+outputs:                # Expected output format
+  - name: string        # Output field name
+    type: string        # "text" | "json" | "code" | "markdown"
+    description: string # Description of expected output
+
+# Prompt content
+prompt: string          # The actual prompt template (with {{variable}} placeholders)
+
+# Examples
+examples:               # Usage examples
+  - name: string        # Example name
+    inputs:             # Example input values
+      string: string    # key: value pairs
+    expected_output: string  # Expected output description
+
+# Evaluation criteria
+eval:                   # Evaluation framework configuration
+  criteria:             # What to evaluate
+    - name: string      # Criterion name
+      description: string
+      weight: number   # 0-1 weight for scoring
+  test_cases:           # Automated test cases
+    - name: string
+      inputs: object
+      expected: string
+
+# Additional notes
+notes: string           # Internal notes about the prompt
+usage: string           # Usage guidelines
+
+# Context and instructions
+contexts:               # When to use this prompt
+  - string              # e.g., ["code review PRs", "pre-commit checks"]
+
+instructions:           # Special instructions for the LLM
+  - string              # e.g., ["always provide code examples", "use bullet points"]
+
+# Dependencies
+dependencies:           # Other prompts or resources this depends on
+  - id: string          # Prompt ID
+    version: string     # Required version
+    reason: string      # Why this dependency exists

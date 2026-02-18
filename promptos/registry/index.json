@@ -1,0 +1,115 @@
+{
+  "registry_version": "1.0.0",
+  "last_updated": "2026-02-17T23:00:00Z",
+  "prompts": [
+    {
+      "id": "codegen-v1",
+      "name": "Code Generation",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/codegen-v1.yaml"
+    },
+    {
+      "id": "debugging-v1",
+      "name": "Debugging/Troubleshooting",
+      "category": "debugging",
+      "version": "1.0.0",
+      "file": "prompts/debugging/debugging-v1.yaml"
+    },
+    {
+      "id": "docs-gen-v1",
+      "name": "Documentation Generation",
+      "category": "docs",
+      "version": "1.0.0",
+      "file": "prompts/docs/docs-gen-v1.yaml"
+    },
+    {
+      "id": "incident-response-v1",
+      "name": "Incident Response",
+      "category": "sre",
+      "version": "1.0.0",
+      "file": "prompts/sre/incident-response-v1.yaml"
+    },
+    {
+      "id": "architecture-v1",
+      "name": "Architecture Documentation",
+      "category": "architecture",
+      "version": "1.0.0",
+      "file": "prompts/architecture/architecture-v1.yaml"
+    },
+    {
+      "id": "code-review-v1",
+      "name": "Code Review",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/code-review-v1.yaml"
+    },
+    {
+      "id": "api-design-v1",
+      "name": "API Design",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/api-design-v1.yaml"
+    },
+    {
+      "id": "test-cases-v1",
+      "name": "Writing Test Cases",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/test-cases-v1.yaml"
+    },
+    {
+      "id": "refactoring-v1",
+      "name": "Refactoring Suggestions",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/refactoring-v1.yaml"
+    },
+    {
+      "id": "security-review-v1",
+      "name": "Security Review",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/security-review-v1.yaml"
+    },
+    {
+      "id": "performance-v1",
+      "name": "Performance Optimization",
+      "category": "codegen",
+      "version": "1.0.0",
+      "file": "prompts/codegen/performance-v1.yaml"
+    }
+  ],
+  "categories": [
+    {
+      "id": "codegen",
+      "name": "Code Generation",
+      "description": "Prompts for generating code, APIs, and tests",
+      "prompt_count": 7
+    },
+    {
+      "id": "debugging",
+      "name": "Debugging",
+      "description": "Prompts for troubleshooting and fixing bugs",
+      "prompt_count": 1
+    },
+    {
+      "id": "docs",
+      "name": "Documentation",
+      "description": "Prompts for generating documentation",
+      "prompt_count": 1
+    },
+    {
+      "id": "sre",
+      "name": "SRE/Operations",
+      "description": "Prompts for Site Reliability Engineering",
+      "prompt_count": 1
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "description": "Prompts for system architecture design",
+      "prompt_count": 1
+    }
+  ]
+}

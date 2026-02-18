@@ -1,0 +1,138 @@
+# Test Cases Prompt v1.0.0
+
+id: test-cases-v1
+name: Writing Test Cases
+description: Generate comprehensive test cases for your code
+category: codegen
+role: QA engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+  - cursor
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - testing
+  - test-cases
+  - quality-assurance
+  - unit-tests
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: testing_framework
+    label: Testing Framework
+    type: text
+    required: true
+    placeholder: e.g., Jest, pytest, JUnit
+
+  - name: code_snippet
+    label: Code to Test
+    type: textarea
+    required: true
+    placeholder: Paste the code that needs tests...
+
+  - name: test_types
+    label: Test Types
+    type: text
+    required: false
+    placeholder: e.g., unit, integration, e2e
+
+  - name: context
+    label: Edge Cases to Consider
+    type: textarea
+    required: false
+    placeholder: Any specific edge cases...
+
+outputs:
+  - name: tests
+    type: code
+    description: Generated test cases
+
+  - name: edge_cases
+    type: markdown
+    description: Edge case coverage
+
+  - name: mocks
+    type: markdown
+    description: Mock/stub suggestions
+
+  - name: test_data
+    type: markdown
+    description: Test data examples
+
+prompt: |
+  Generate comprehensive test cases for the following {{language}} code using {{testing_framework}}.
+
+  Code to Test:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+
+  {{#if test_types}}
+  Test Types: {{test_types}}
+  {{/if}}
+
+  {{#if context}}
+  Edge Cases to Consider:
+  {{context}}
+  {{/if}}
+
+  Please provide:
+  1. Unit test cases with assertions
+  2. Edge case coverage
+  3. Mock/stub suggestions
+  4. Test data examples
+  5. Coverage recommendations
+
+examples:
+  - name: jest_function_tests
+    inputs:
+      language: TypeScript
+      testing_framework: Jest
+      code_snippet: "function add(a: number, b: number): number { return a + b; }"
+      test_types: unit
+    expected_output: Should include positive, negative, and edge case tests
+
+  - name: pytest_class_tests
+    inputs:
+      language: Python
+      testing_framework: pytest
+      code_snippet: "class Calculator:\n    def add(self, a, b):\n        return a + b"
+      test_types: unit, integration
+    expected_output: Should include class-based tests with multiple scenarios
+
+usage: Use to generate tests for new code or improve existing test coverage.
+
+contexts:
+  - Test-driven development
+  - Improving test coverage
+  - Code review feedback
+
+instructions:
+  - Follow testing framework conventions
+  - Include descriptive test names
+  - Add comments explaining scenarios
+
+dependencies: []

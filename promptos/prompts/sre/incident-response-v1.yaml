@@ -1,0 +1,141 @@
+# Incident Response Prompt v1.0.0
+
+id: incident-response-v1
+name: Incident Response
+description: Create incident response plans and post-mortem templates
+category: sre
+role: site reliability engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - sre
+  - incident-response
+  - post-mortem
+  - operations
+
+inputs:
+  - name: incident_type
+    label: Incident Type
+    type: select
+    required: true
+    options:
+      - Service Outage
+      - Data Breach
+      - Performance Issue
+      - Security Incident
+      - Configuration Error
+      - Other
+
+  - name: severity
+    label: Severity Level
+    type: select
+    required: true
+    options:
+      - P1 - Critical
+      - P2 - High
+      - P3 - Medium
+      - P4 - Low
+
+  - name: systems_affected
+    label: Systems Affected
+    type: textarea
+    required: true
+    placeholder: List affected systems/services...
+
+  - name: impact
+    label: Business Impact
+    type: textarea
+    required: true
+    placeholder: Describe the impact on users/business...
+
+  - name: timeline
+    label: Timeline Events
+    type: textarea
+    required: false
+    placeholder: Key events and timestamps...
+
+outputs:
+  - name: containment_plan
+    type: markdown
+    description: Immediate containment steps
+
+  - name: communication
+    type: markdown
+    description: Communication templates
+
+  - name: investigation
+    type: markdown
+    description: Investigation checklist
+
+  - name: resolution
+    type: markdown
+    description: Resolution steps
+
+  - name: post_incident
+    type: markdown
+    description: Post-incident action items
+
+  - name: lessons_learned
+    type: markdown
+    description: Lessons learned template
+
+prompt: |
+  Create an incident response plan for a {{severity}} {{incident_type}} incident.
+
+  Systems Affected:
+  {{systems_affected}}
+
+  Business Impact:
+  {{impact}}
+
+  {{#if timeline}}
+  Timeline:
+  {{timeline}}
+  {{/if}}
+
+  Please provide:
+  1. Immediate containment steps
+  2. Communication templates (internal and external)
+  3. Investigation checklist
+  4. Resolution steps
+  5. Post-incident action items
+  6. Lessons learned template
+
+examples:
+  - name: service_outage
+    inputs:
+      incident_type: Service Outage
+      severity: P1 - Critical
+      systems_affected: "API Gateway, User Service, Payment Service"
+      impact: "Users unable to make purchases; estimated $50K revenue loss per hour"
+    expected_output: Should include escalation path, status page updates, rollback plan
+
+  - name: security_incident
+    inputs:
+      incident_type: Data Breach
+      severity: P1 - Critical
+      systems_affected: "User Database"
+      impact: "Potential exposure of 10,000 user records"
+    expected_output: Should include forensics steps, notification requirements, legal considerations
+
+usage: Use during incident response or for creating runbooks.
+
+contexts:
+  - Active incident management
+  - Post-incident reviews
+  - Runbook creation
+
+instructions:
+  - Be specific to severity level
+  - Include communication templates
+  - Focus on actionable steps
+
+dependencies: []

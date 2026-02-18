@@ -1,0 +1,128 @@
+# Code Generation Prompt v1.0.0
+
+id: codegen-v1
+name: Code Generation
+description: Generate code based on requirements
+category: codegen
+role: software engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+  - cursor
+  - copilot
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - code-generation
+  - codegen
+  - development
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: framework
+    label: Framework (optional)
+    type: text
+    required: false
+    placeholder: e.g., React, Django, Spring
+
+  - name: requirements
+    label: Requirements
+    type: textarea
+    required: true
+    placeholder: Describe what the code should do...
+
+  - name: constraints
+    label: Constraints
+    type: textarea
+    required: false
+    placeholder: Any constraints or requirements...
+
+  - name: context
+    label: Context
+    type: textarea
+    required: false
+    placeholder: Additional context or existing code...
+
+outputs:
+  - name: code
+    type: code
+    description: Generated code
+
+  - name: explanation
+    type: markdown
+    description: Explanation of the code
+
+  - name: usage
+    type: markdown
+    description: Usage instructions
+
+prompt: |
+  Generate {{language}} code{{#if framework}} using {{framework}}{{/if}} for the following requirements:
+
+  Requirements:
+  {{requirements}}
+
+  {{#if constraints}}
+  Constraints:
+  {{constraints}}
+  {{/if}}
+
+  {{#if context}}
+  Context:
+  {{context}}
+  {{/if}}
+
+  Please provide:
+  1. Clean, well-structured code
+  2. Brief explanation of the implementation
+  3. Usage instructions
+
+examples:
+  - name: python_function
+    inputs:
+      language: Python
+      requirements: Function to calculate factorial
+    expected_output: Should provide recursive or iterative implementation
+
+  - name: react_component
+    inputs:
+      language: TypeScript
+      framework: React
+      requirements: Button component with loading state
+    expected_output: Should provide TSX component with proper types
+
+usage: Use for generating new code based on requirements.
+
+contexts:
+  - New feature development
+  - Prototyping
+  - Learning
+
+instructions:
+  - Follow language best practices
+  - Include error handling
+  - Add comments for complex logic
+
+dependencies: []

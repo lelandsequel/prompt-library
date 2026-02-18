@@ -1,0 +1,103 @@
+{
+  "name": "PromptOS",
+  "description": "JourdanLabs Prompt Library - IDE Integration",
+  "version": "1.0.0",
+  "schema_version": "1.0.0",
+  "publisher": "JourdanLabs",
+  "categories": [
+    "Prompt Management",
+    "Developer Tools"
+  ],
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "llm",
+    "ai",
+    "codegen",
+    "documentation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jourdanlabs/prompt-library"
+  },
+  "prompts": {
+    "codegen": {
+      "id": "codegen-v1",
+      "name": "Code Generation",
+      "description": "Generate code based on requirements",
+      "icon": "code"
+    },
+    "debugging": {
+      "id": "debugging-v1", 
+      "name": "Debugging",
+      "description": "Debug and troubleshoot code issues",
+      "icon": "bug"
+    },
+    "docs": {
+      "id": "docs-gen-v1",
+      "name": "Documentation Generation",
+      "description": "Generate documentation from code",
+      "icon": "document"
+    },
+    "sre": {
+      "id": "incident-response-v1",
+      "name": "Incident Response",
+      "description": "SRE incident response and post-mortem",
+      "icon": "alert"
+    },
+    "architecture": {
+      "id": "architecture-v1",
+      "name": "Architecture Documentation",
+      "description": "Document system architecture",
+      "icon": "diagram"
+    }
+  },
+  "configuration": {
+    "prompt_directory": "./promptos/prompts",
+    "registry_file": "./promptos/registry/index.json",
+    "schema_file": "./promptos/schema/promptspec.yaml",
+    "default_format": "raw"
+  },
+  "model_defaults": {
+    "claude": {
+      "format": "xml",
+      "prefix": "<task>",
+      "suffix": "</task>"
+    },
+    "gpt": {
+      "format": "markdown",
+      "system_prefix": "You are"
+    },
+    "cursor": {
+      "format": "markdown",
+      "task_prefix": "# Task"
+    }
+  },
+  "vscode": {
+    "activationEvents": [
+      "onCommand:promptos.loadPrompt",
+      "onCommand:promptos.listPrompts"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "command": "promptos.loadPrompt",
+          "title": "Load Prompt",
+          "description": "Load a prompt from the library"
+        },
+        {
+          "command": "promptos.listPrompts",
+          "title": "List Prompts",
+          "description": "List all available prompts"
+        }
+      ],
+      "keybindings": [
+        {
+          "command": "promptos.loadPrompt",
+          "key": "ctrl+shift+p",
+          "mac": "cmd+shift+p"
+        }
+      ]
+    }
+  }
+}

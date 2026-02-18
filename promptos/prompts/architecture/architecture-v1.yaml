@@ -1,0 +1,126 @@
+# Architecture Documentation Prompt v1.0.0
+
+id: architecture-v1
+name: Architecture Documentation
+description: Document system architecture, components, and design decisions
+category: architecture
+role: software architect
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - architecture
+  - system-design
+  - documentation
+  - components
+
+inputs:
+  - name: project_name
+    label: Project/System Name
+    type: text
+    required: true
+    placeholder: e.g., Payment Gateway Service
+
+  - name: overview
+    label: System Overview
+    type: textarea
+    required: true
+    placeholder: Brief description of what this system does...
+
+  - name: components
+    label: Key Components
+    type: textarea
+    required: true
+    placeholder: List main components or services...
+
+  - name: tech_stack
+    label: Technology Stack
+    type: textarea
+    required: true
+    placeholder: e.g., Node.js, PostgreSQL, Redis, AWS
+
+  - name: context
+    label: Additional Notes
+    type: textarea
+    required: false
+    placeholder: Any additional architectural considerations...
+
+outputs:
+  - name: architecture_doc
+    type: markdown
+    description: High-level architecture description
+
+  - name: diagrams
+    type: text
+    description: Text-based diagrams
+
+  - name: data_flow
+    type: markdown
+    description: Data flow explanation
+
+  - name: design_decisions
+    type: markdown
+    description: Key design decisions and rationale
+
+  - name: scalability
+    type: markdown
+    description: Scalability considerations
+
+  - name: bottlenecks
+    type: markdown
+    description: Potential bottlenecks and recommendations
+
+prompt: |
+  Please help me create architecture documentation for the {{project_name}} system.
+
+  System Overview:
+  {{overview}}
+
+  Key Components/Services:
+  {{components}}
+
+  Technology Stack:
+  {{tech_stack}}
+
+  {{#if context}}
+  Additional Notes:
+  {{context}}
+  {{/if}}
+
+  Please provide:
+  1. High-level architecture description
+  2. Component interaction diagram (text-based)
+  3. Data flow explanation
+  4. Key design decisions and rationale
+  5. Scalability considerations
+  6. Potential bottlenecks and recommendations
+
+examples:
+  - name: microservice_architecture
+    inputs:
+      project_name: E-commerce Platform
+      overview: Multi-tenant e-commerce platform with inventory management
+      components: "User Service, Product Service, Order Service, Payment Service"
+      tech_stack: "Node.js, React, PostgreSQL, Redis, AWS Lambda, Kubernetes"
+    expected_output: Should include service diagram, data flow, design decisions
+
+usage: Use to document system architecture for new projects or existing systems.
+
+contexts:
+  - New system design
+  - Architecture reviews
+  - Onboarding documentation
+
+instructions:
+  - Use ASCII diagrams where helpful
+  - Be specific about technologies
+  - Consider trade-offs in design decisions
+
+dependencies: []

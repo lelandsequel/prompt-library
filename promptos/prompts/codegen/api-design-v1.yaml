@@ -1,0 +1,123 @@
+# API Design Prompt v1.0.0
+
+id: api-design-v1
+name: API Design
+description: Design RESTful or GraphQL APIs with proper patterns
+category: codegen
+role: API architect
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - api-design
+  - rest
+  - graphql
+  - architecture
+
+inputs:
+  - name: api_type
+    label: API Type
+    type: select
+    required: true
+    options:
+      - REST
+      - GraphQL
+      - gRPC
+      - WebSocket
+
+  - name: purpose
+    label: API Purpose
+    type: text
+    required: true
+    placeholder: What does this API do?
+
+  - name: resources
+    label: Resources/Entities
+    type: textarea
+    required: true
+    placeholder: e.g., Users, Orders, Products
+
+  - name: requirements
+    label: Requirements
+    type: textarea
+    required: true
+    placeholder: Functional requirements...
+
+  - name: context
+    label: Additional Context
+    type: textarea
+    required: false
+    placeholder: Any specific constraints or requirements...
+
+outputs:
+  - name: endpoints
+    type: markdown
+    description: API endpoint structure
+
+  - name: schemas
+    type: json
+    description: Request/response schemas
+
+  - name: error_handling
+    type: markdown
+    description: Error handling strategy
+
+  - name: authentication
+    type: markdown
+    description: Authentication/authorization approach
+
+  - name: examples
+    type: markdown
+    description: Example API documentation
+
+prompt: |
+  Design a {{api_type}} API for: {{purpose}}
+
+  Resources/Entities:
+  {{resources}}
+
+  Requirements:
+  {{requirements}}
+
+  {{#if context}}
+  Additional Context:
+  {{context}}
+  {{/if}}
+
+  Please provide:
+  1. API endpoint structure
+  2. Request/response schemas
+  3. Error handling strategy
+  4. Authentication/authorization approach
+  5. Rate limiting and pagination strategy
+  6. Example API documentation
+
+examples:
+  - name: rest_user_api
+    inputs:
+      api_type: REST
+      purpose: User management for a SaaS application
+      resources: Users, Sessions, Roles
+      requirements: CRUD operations, authentication, authorization
+    expected_output: Should include RESTful endpoints, JSON schemas, auth flow
+
+usage: Use when designing new APIs or improvings:
+  - existing ones.
+
+context API design
+  - Architecture planning
+  - API documentation
+
+instructions:
+  - Follow REST/GraphQL best practices
+  - Include proper HTTP status codes
+  - Consider pagination for lists
+
+dependencies: []

@@ -1,0 +1,154 @@
+# Code Review Prompt v1.0.0
+
+id: code-review-v1
+name: Code Review
+description: Get a comprehensive code review with best practices and potential improvements
+category: codegen
+role: expert software engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+  - cursor
+  - copilot
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - code-review
+  - best-practices
+  - security
+  - quality
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: framework
+    label: Framework (optional)
+    type: text
+    required: false
+    placeholder: e.g., React, Django, Spring
+
+  - name: code_snippet
+    label: Code to Review
+    type: textarea
+    required: true
+    placeholder: Paste your code here...
+
+  - name: focus_area
+    label: Focus Area
+    type: text
+    required: false
+    placeholder: e.g., performance, security, readability
+
+  - name: context
+    label: Additional Context
+    type: textarea
+    required: false
+    placeholder: Any additional context about the code...
+
+outputs:
+  - name: review
+    type: markdown
+    description: Detailed code review with recommendations
+
+  - name: issues
+    type: json
+    description: List of identified issues with severity
+
+  - name: suggestions
+    type: markdown
+    description: Actionable improvement suggestions
+
+prompt: |
+  Please review the following {{language}} code{{#if framework}} using {{framework}}{{/if}} for best practices, potential bugs, security issues, and improvement suggestions.
+
+  {{#if focus_area}}
+  Focus areas: {{focus_area}}
+  {{/if}}
+
+  Code:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+
+  {{#if context}}
+  Additional Context:
+  {{context}}
+  {{/if}}
+
+  Please provide a detailed code review with specific recommendations.
+
+examples:
+  - name: python_function_review
+    inputs:
+      language: Python
+      code_snippet: |
+        def add(a, b):
+            return a + b
+      focus_area: best practices
+    expected_output: Should suggest type hints, docstring, and error handling
+
+  - name: react_component_review
+    inputs:
+      language: TypeScript
+      framework: React
+      code_snippet: |
+        function Button({ label, onClick }) {
+          return <button onClick={onClick}>{label}</button>
+        }
+      focus_area: performance
+    expected_output: Should suggest memoization, proper types, accessibility
+
+eval:
+  criteria:
+    - name: completeness
+      description: Reviews all code aspects
+      weight: 0.3
+    - name: actionability
+      description: Provides actionable suggestions
+      weight: 0.4
+    - name: clarity
+      description: Clear and well-structured
+      weight: 0.3
+
+  test_cases:
+    - name: basic_review
+      description: Basic code review
+      inputs:
+        language: Python
+        code_snippet: "def hello():\n    print('hello')"
+      expected: type hint
+
+usage: Use for any code review task. Focus areas can be specified to tailor the review.
+
+contexts:
+  - Pull request reviews
+  - Pre-commit checks
+  - Code quality audits
+
+instructions:
+  - Provide specific code examples in recommendations
+  - Include severity levels for issues
+  - Suggest fixes, not just problems
+
+dependencies: []

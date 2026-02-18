@@ -1,0 +1,131 @@
+# Refactoring Suggestions Prompt v1.0.0
+
+id: refactoring-v1
+name: Refactoring Suggestions
+description: Get recommendations for improving code structure and quality
+category: codegen
+role: senior software engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - refactoring
+  - code-quality
+  - best-practices
+  - design-patterns
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: code_snippet
+    label: Code to Refactor
+    type: textarea
+    required: true
+    placeholder: Paste the code to improve...
+
+  - name: goals
+    label: Refactoring Goals
+    type: text
+    required: true
+    placeholder: e.g., readability, performance, maintainability
+
+  - name: constraints
+    label: Constraints
+    type: textarea
+    required: false
+    placeholder: Any constraints to consider...
+
+outputs:
+  - name: issues
+    type: markdown
+    description: Code quality issues identified
+
+  - name: suggestions
+    type: markdown
+    description: Specific refactoring suggestions
+
+  - name: patterns
+    type: markdown
+    description: Design pattern recommendations
+
+  - name: impact
+    type: markdown
+    description: Estimated impact of changes
+
+  - name: migration
+    type: markdown
+    description: Step-by-step migration plan
+
+prompt: |
+  Suggest refactoring improvements for the following {{language}} code.
+
+  Goals: {{goals}}
+
+  Code:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+
+  {{#if constraints}}
+  Constraints:
+  {{constraints}}
+  {{/if}}
+
+  Please provide:
+  1. Code quality issues identified
+  2. Specific refactoring suggestions with code examples
+  3. Design pattern recommendations
+  4. Estimated impact of changes
+  5. Step-by-step migration plan if applicable
+
+examples:
+  - name: extract_method
+    inputs:
+      language: JavaScript
+      code_snippet: "const result = a + b; const doubled = result * 2; const formatted = `Result: ${doubled}`;"
+      goals: readability, maintainability
+    expected_output: Should suggest extracting to named functions
+
+  - name: class_refactor
+    inputs:
+      language: Python
+      code_snippet: "def process(data):\n    if data['type'] == 'a':\n        return data['value'] * 2\n    elif data['type'] == 'b':\n        return data['value'] + 10"
+      goals: maintainability, extensibility
+    expected_output: Should suggest strategy pattern or class-based approach
+
+usage: Use to improve code quality and structure.
+
+contexts:
+  - Code reviews
+  - Technical debt reduction
+  - Learning opportunity
+
+instructions:
+  - Provide before/after code examples
+  - Explain trade-offs
+  - Prioritize by impact
+
+dependencies: []

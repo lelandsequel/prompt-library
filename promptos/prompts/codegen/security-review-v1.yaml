@@ -1,0 +1,132 @@
+# Security Review Prompt v1.0.0
+
+id: security-review-v1
+name: Security Review
+description: Identify security vulnerabilities and best practices
+category: codegen
+role: security engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - security
+  - vulnerability
+  - owasp
+  - secure-coding
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: code_snippet
+    label: Code to Review
+    type: textarea
+    required: true
+    placeholder: Paste your code here...
+
+  - name: data_types
+    label: Data Types Handled
+    type: text
+    required: true
+    placeholder: e.g., user PII, financial data, passwords
+
+  - name: context
+    label: Additional Context
+    type: textarea
+    required: false
+    placeholder: Any security requirements or compliance needs...
+
+outputs:
+  - name: vulnerabilities
+    type: json
+    description: Security vulnerabilities identified
+
+  - name: risk_levels
+    type: markdown
+    description: Risk severity for each issue
+
+  - name: remediation
+    type: markdown
+    description: Remediation suggestions
+
+  - name: best_practices
+    type: markdown
+    description: Secure coding best practices
+
+  - name: testing
+    type: markdown
+    description: Security testing recommendations
+
+prompt: |
+  Perform a security review of the following {{language}} code.
+
+  Data Types Handled:
+  {{data_types}}
+
+  Code:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+
+  {{#if context}}
+  Additional Context:
+  {{context}}
+  {{/if}}
+
+  Please provide:
+  1. Security vulnerabilities identified (OWASP Top 10 if applicable)
+  2. Risk severity for each issue
+  3. Specific remediation suggestions
+  4. Secure coding best practices to follow
+  5. Recommended security testing approaches
+
+examples:
+  - name: sql_injection_check
+    inputs:
+      language: Python
+      code_snippet: "query = f'SELECT * FROM users WHERE id = {user_id}'"
+      data_types: user credentials
+    expected_output: Should identify SQL injection risk and suggest parameterized queries
+
+  - name: xss_review
+    inputs:
+      language: JavaScript
+      code_snippet: "element.innerHTML = userInput;"
+      data_types: user-generated content
+    expected_output: Should identify XSS risk and suggest textContent or sanitization
+
+usage: Use for security-focused code reviews.
+
+contexts:
+  - Security audits
+  - Pre-production reviews
+  - Compliance checks
+
+instructions:
+  - Reference OWASP Top 10
+  - Provide code examples for fixes
+  - Include severity ratings
+
+dependencies: []

@@ -1,0 +1,150 @@
+# Performance Optimization Prompt v1.0.0
+
+id: performance-v1
+name: Performance Optimization
+description: Optimize code for better performance and scalability
+category: codegen
+role: performance engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+  - gemini-1.5-pro
+
+version: "1.0.0"
+author: JourdanLabs
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - performance
+  - optimization
+  - scalability
+  - profiling
+
+inputs:
+  - name: language
+    label: Programming Language
+    type: select
+    required: true
+    options:
+      - TypeScript
+      - JavaScript
+      - Python
+      - Java
+      - Go
+      - Rust
+      - C#
+      - Ruby
+      - PHP
+      - Swift
+      - Kotlin
+      - Other
+
+  - name: code_snippet
+    label: Code to Optimize
+    type: textarea
+    required: true
+    placeholder: Paste the code to optimize...
+
+  - name: bottleneck
+    label: Known Bottlenecks
+    type: textarea
+    required: false
+    placeholder: Describe any known performance issues...
+
+  - name: constraints
+    label: Constraints
+    type: textarea
+    required: false
+    placeholder: e.g., must maintain API compatibility
+
+  - name: context
+    label: Context
+    type: textarea
+    required: false
+    placeholder: Environment, scale expectations...
+
+outputs:
+  - name: issues
+    type: markdown
+    description: Performance issues identified
+
+  - name: optimized_code
+    type: code
+    description: Optimized code with explanations
+
+  - name: complexity
+    type: markdown
+    description: Time/space complexity analysis
+
+  - name: database_optimization
+    type: markdown
+    description: Database/query optimization suggestions
+
+  - name: caching
+    type: markdown
+    description: Caching strategies
+
+  - name: monitoring
+    type: markdown
+    description: Monitoring recommendations
+
+prompt: |
+  Optimize the following {{language}} code for better performance.
+
+  Code:
+  ```{{language}}
+  {{code_snippet}}
+  ```
+
+  {{#if bottleneck}}
+  Known Bottlenecks:
+  {{bottleneck}}
+  {{/if}}
+
+  {{#if constraints}}
+  Constraints:
+  {{constraints}}
+  {{/if}}
+
+  {{#if context}}
+  Context:
+  {{context}}
+  {{/if}}
+
+  Please provide:
+  1. Performance issues identified
+  2. Optimized code with explanations
+  3. Time/space complexity analysis
+  4. Database/query optimization suggestions if applicable
+  5. Caching strategies
+  6. Monitoring recommendations
+
+examples:
+  - name: loop_optimization
+    inputs:
+      language: Python
+      code_snippet: "results = []\nfor item in items:\n    results.append(process(item))\nreturn results"
+      bottleneck: slow for large lists
+    expected_output: Should suggest list comprehension and potential parallelization
+
+  - name: database_n_plus_one
+    inputs:
+      language: JavaScript
+      code_snippet: "users.forEach(u => u.posts = db.query('SELECT * FROM posts WHERE user_id = ?', u.id))"
+      bottleneck: N+1 query problem
+    expected_output: Should suggest JOIN or eager loading
+
+usage: Use when optimizing code for performance.
+
+contexts:
+  - Performance tuning
+  - Scalability improvements
+  - Code reviews
+
+instructions:
+  - Provide actual code changes
+  - Include complexity analysis
+  - Prioritize impactful changes
+
+dependencies: []
