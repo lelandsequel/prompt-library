@@ -1,0 +1,93 @@
+ANDROID 18 — BUILD PROMPTOS POLICY ENGINE 🛡️
+
+GOAL
+Add enforceable governance rules controlling:
+
+- which prompts can use which models
+- allowed data classes per prompt
+- redaction requirements
+- approval requirements
+- usage restrictions by role/team
+- runtime enforcement
+
+This is PromptOS safety/compliance layer.
+
+============================================================
+POLICY MODEL
+============================================================
+
+Create:
+
+/promptos/policy/policy.yaml
+
+Structure:
+
+models:
+  allowed:
+    - claude-sonnet
+    - gpt-5
+  restricted:
+    - local-llm
+
+data_classes:
+  allowed:
+    - public
+    - internal
+  restricted:
+    - pii
+    - financial
+    - secrets
+
+prompts:
+  python-function:
+    allowed_models: [claude-sonnet, gpt-5]
+    data_class: internal
+    approval_required: false
+
+  prod-log-analysis:
+    allowed_models: [claude-sonnet]
+    data_class: pii
+    approval_required: true
+    redact: true
+
+roles:
+  engineer:
+    allowed_data_classes: [public, internal]
+  sre:
+    allowed_data_classes: [public, internal, pii]
+
+============================================================
+ENFORCEMENT
+============================================================
+
+Hook policy into:
+
+- CLI loader
+- IDE extension
+- CI eval
+
+Rules:
+
+If prompt violates:
+→ block execution
+→ show reason
+→ suggest allowed model
+
+If redact=true:
+→ run redaction filter on inputs before render
+
+If approval_required:
+→ only allow if approved flag in registry/server
+
+============================================================
+DELIVERABLES
+============================================================
+
+- policy parser
+- runtime enforcement hooks
+- redaction filter stub
+- docs: POLICY.md
+
+SUCCESS
+
+PromptOS can enforce AI governance at runtime.

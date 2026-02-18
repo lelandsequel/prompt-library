@@ -1,0 +1,71 @@
+ANDROID 18 — BUILD PROMPTOS ANALYTICS 📊
+
+GOAL
+Create a lightweight analytics layer that logs:
+- which prompt was run
+- by whom (optional user id)
+- when
+- model used (optional)
+- input hash (NOT raw inputs by default)
+- output hash + length
+- pass/fail eval results (if run)
+- IDE vs CLI usage channel
+
+DESIGN PRINCIPLES
+- privacy-first
+- local by default (JSONL logs)
+- optional server sink (for enterprise)
+
+REPO ADDITIONS
+/promptos/analytics/
+  logger.py (or logger.ts)
+  schema.json
+  reports.py
+/promptos/cli/analytics.py
+
+LOG FORMAT (JSONL)
+Each line:
+{
+  "ts": "2026-02-17T23:12:10Z",
+  "prompt_id": "python-function",
+  "version": "1.2.0",
+  "channel": "cli|ide|ci",
+  "user": "optional",
+  "model": "optional",
+  "input_hash": "sha256(...)",
+  "output_hash": "sha256(...)",
+  "output_chars": 2048,
+  "success": true,
+  "meta": { "tags": ["codegen"], "category": "codegen" }
+}
+
+MVP FEATURES
+1) log event on every run (CLI + IDE)
+2) analytics report command:
+   promptos analytics report --last 7d
+   outputs:
+   - top prompts
+   - usage by category
+   - failures
+   - “most edited prompts” (git stats)
+3) drift detection:
+   - if output_hash diversity spikes for same prompt+case, flag drift
+4) export CSV:
+   promptos analytics export --csv out.csv
+
+DEFAULT STORAGE
+promptos/.telemetry/promptos-usage.jsonl
+Allow env var PROMPTOS_TELEMETRY=0 to disable.
+
+BONUS (ENTERPRISE)
+- optional HTTP sink: POST /events
+- redact rules config
+
+DELIVERABLES
+- analytics logger + schema
+- CLI reports
+- IDE calls logger too
+- docs: ANALYTICS.md
+
+SUCCESS
+You can prove adoption + show ROI metrics to Isaac’s execs and future customers.

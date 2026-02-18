@@ -1,0 +1,131 @@
+{
+  "name": "promptos",
+  "displayName": "PromptOS",
+  "description": "JourdanLabs Prompt Library - IDE Integration for prompt management",
+  "version": "1.0.0",
+  "publisher": "JourdanLabs",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.109.0",
+    "cursor": "^1.109.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "llm",
+    "ai",
+    "codegen",
+    "promptos"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:yaml",
+    "onLanguage:json",
+    "onCommand:promptos.insertPrompt",
+    "onCommand:promptos.listPrompts",
+    "onCommand:promptos.loadPrompt",
+    "workspaceContains:**/*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "promptos.insertPrompt",
+        "title": "PromptOS: Insert Prompt",
+        "description": "Search and insert a prompt from the library"
+      },
+      {
+        "command": "promptos.listPrompts",
+        "title": "PromptOS: List All Prompts",
+        "description": "List all available prompts in the library"
+      },
+      {
+        "command": "promptos.loadPrompt",
+        "title": "PromptOS: Load Prompt",
+        "description": "Load a specific prompt by ID"
+      },
+      {
+        "command": "promptos.refreshPrompts",
+        "title": "PromptOS: Refresh Prompts",
+        "description": "Refresh the prompt cache"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "promptos.insertPrompt",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "PromptOS",
+      "properties": {
+        "promptos.promptDirectory": {
+          "type": "string",
+          "default": "./promptos/prompts",
+          "description": "Directory containing prompt files"
+        },
+        "promptos.registryFile": {
+          "type": "string",
+          "default": "./promptos/registry/index.json",
+          "description": "Path to the prompt registry file"
+        },
+        "promptos.manifestFile": {
+          "type": "string",
+          "default": "./promptos/ide/promptos.json",
+          "description": "Path to the PromptOS manifest file"
+        },
+        "promptos.includeVariables": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include variable injection in quick picks"
+        },
+        "promptos.showMetadataOnHover": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show prompt metadata on hover"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "promptos-prompt",
+        "aliases": [
+          "PromptOS Prompt"
+        ],
+        "extensions": [
+          ".prompt"
+        ]
+      }
+    ],
+    "snippets": [
+      {
+        "language": "promptos-prompt",
+        "path": "./snippets/promptos.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.109.0",
+    "typescript": "^5.9.3",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  }
+}

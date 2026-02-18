@@ -1,0 +1,59 @@
+ANDROID 18 — BUILD PROMPTOS REGISTRY SERVER (MINI “PROMPTOS CLOUD”) ☁️
+
+GOAL
+Create a simple server that:
+- stores PromptSpecs + registry
+- supports orgs/teams (multi-tenant)
+- exposes API for IDE/CLI to search + fetch prompts
+- supports versioning + approvals
+- provides auth (JWT or API keys)
+
+STACK (PICK ONE)
+Option A (fast): Node.js + Fastify + SQLite (or Postgres if available)
+Option B: Python + FastAPI + SQLite/Postgres
+
+MVP API
+Auth:
+- POST /auth/login (optional)
+- API key header: X-PromptOS-Key
+
+Tenants:
+- POST /orgs
+- GET /orgs/:id
+
+Prompts:
+- GET /orgs/:id/prompts?query=&tag=&category=&model=
+- GET /orgs/:id/prompts/:prompt_id
+- POST /orgs/:id/prompts  (create new PromptSpec)
+- PUT /orgs/:id/prompts/:prompt_id (new version)
+- POST /orgs/:id/prompts/:prompt_id/approve (governance)
+
+Registry:
+- GET /orgs/:id/registry/index.json
+
+Eval results:
+- POST /orgs/:id/evals (store CI eval report)
+- GET /orgs/:id/evals?prompt_id=
+
+DATA MODEL (MINIMUM)
+tables:
+- orgs(id, name, created_at)
+- users(id, org_id, email, role)
+- prompts(id, org_id, prompt_id, version, spec_yaml, created_at, created_by, approved)
+- api_keys(id, org_id, key_hash, created_at, revoked)
+- eval_reports(id, org_id, report_json, created_at)
+
+CLI/IDE INTEGRATION
+- add setting: promptos.registryUrl
+- if registryUrl set, fetch index.json from server instead of local file
+- “sync down” command: caches PromptSpecs locally
+
+DELIVERABLES
+/server/ (app)
+- dockerfile
+- migration scripts
+- minimal admin seed script
+- README: run locally in 3 commands
+
+SUCCESS
+A real enterprise can host PromptOS registry centrally, with approvals + multi-team usage, and IDEs can pull from it.

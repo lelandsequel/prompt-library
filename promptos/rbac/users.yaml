@@ -1,0 +1,15 @@
+# PromptOS RBAC - Example Users
+# Maps users to roles
+
+users:
+  - username: alice
+    role: admin
+    email: alice@promptos.local
+
+  - username: bob
+    role: editor
+    email: bob@promptos.local
+
+  - username: carol
+    role: auditor
+    email: carol@promptos.local

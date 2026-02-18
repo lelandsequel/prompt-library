@@ -1,0 +1,29 @@
+# Invalid Test Prompt
+
+id: test-invalid
+name: Invalid Test Prompt
+description: This prompt has intentional errors for testing
+category: invalid-category
+
+version: "not-semver"
+author: Test
+
+prompt: |
+  This prompt has API key: sk-1234567890abcdefghijklmnopqrstu
+  And email: test@example.com
+  And phone: 555-123-4567
+  This is a very long prompt that exceeds the maximum token limit and should trigger the max length validation error. The prompt should be under 8192 tokens but this one is intentionally made to be much longer to test the validation system. We need to add more content to ensure it exceeds the token limit. Let me continue adding more text here to make sure we trigger the length validation error. This is a test prompt for the PromptOS policy engine validation system. The purpose is to test that all the validation rules are working correctly.
+  
+  More content to exceed length...
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+  
+  Additional text to make it longer...
+  The quick brown fox jumps over the lazy dog. All good men come to the aid of their country. Now is the time for all good men to come to the aid of their country. The quick brown fox jumps over the lazy dog. All good men come to the aid of their country.
+  
+  Even more content to ensure we exceed the token limit. This is important for testing the max length validation rule which should trigger an error when the prompt exceeds 8192 tokens.
+  
+  API Key Test: bearer_token_abc123def456ghi789jkl012mno345pqr678stu901vwx234
+  SSN Test: 123-45-6789
+  IP Test: 192.168.1.100
+
+notes: Missing role, examples, version not semver, contains PII and API keys

@@ -1,0 +1,16 @@
+{
+  "name": "eval",
+  "version": "1.0.0",
+  "description": "This document defines the structure for evaluation test cases in PromptOS. Each prompt can define test cases to validate its behavior.",
+  "main": "ci-runner.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  }
+}

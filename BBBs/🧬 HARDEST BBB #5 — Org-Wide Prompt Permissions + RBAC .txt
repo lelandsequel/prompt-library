@@ -1,0 +1,49 @@
+ANDROID 18 — BUILD PROMPTOS RBAC 🔐
+
+GOAL
+Control who can:
+
+- run prompts
+- edit prompts
+- approve prompts
+- install packs
+
+============================================================
+MODEL
+============================================================
+
+roles:
+
+- admin
+- prompt-author
+- engineer
+- auditor
+
+permissions:
+
+run_prompt
+edit_prompt
+approve_prompt
+install_pack
+
+============================================================
+ENFORCEMENT
+============================================================
+
+Hook into:
+
+- CLI
+- IDE
+- Registry server
+
+============================================================
+DELIVERABLES
+============================================================
+
+- RBAC engine
+- integration hooks
+- docs: RBAC.md
+
+SUCCESS
+
+PromptOS supports enterprise permissions.

@@ -1,0 +1,60 @@
+ANDROID 18 — BUILD PROMPTOS LEARNING LOOP 🧠
+
+GOAL
+Use eval + analytics to propose prompt improvements.
+
+============================================================
+INPUT SIGNALS
+============================================================
+
+From analytics:
+
+- failure cases
+- low scores
+- high variance outputs
+
+From eval:
+
+- failing cases
+- regressions
+
+============================================================
+ENGINE
+============================================================
+
+Create:
+
+/promptos/learn/
+
+learn.py:
+
+For each prompt:
+
+1. gather failing evals
+2. gather bad outputs
+3. summarize issues
+4. propose prompt improvement draft
+
+Output:
+
+/promptos/learn/proposals/python-function-v2.yaml
+
+============================================================
+CI HOOK
+============================================================
+
+On failures:
+
+→ auto-generate improvement proposal
+
+============================================================
+DELIVERABLES
+============================================================
+
+- learning engine
+- proposal generator
+- docs: LEARNING.md
+
+SUCCESS
+
+PromptOS can suggest prompt upgrades automatically.

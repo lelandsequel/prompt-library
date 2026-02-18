@@ -1,0 +1,31 @@
+{
+  "name": "promptos-runtime",
+  "version": "1.0.0",
+  "description": "Runtime sandbox for testing prompts from the PromptOS library",
+  "main": "prompt-runner.js",
+  "type": "module",
+  "bin": {
+    "prompt-run": "./prompt-runner.js"
+  },
+  "scripts": {
+    "start": "node prompt-runner.js",
+    "test": "node prompt-runner.js --dry-run --id codegen-v1 --inject language=Python,requirements=\"Hello world function\""
+  },
+  "keywords": [
+    "prompt",
+    "llm",
+    "cli",
+    "sandbox"
+  ],
+  "author": "JourdanLabs",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "yaml": "^2.4.5",
+    "openai": "^4.77.0",
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

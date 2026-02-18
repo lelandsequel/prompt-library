@@ -1,0 +1,71 @@
+ANDROID 18 — BUILD PROMPTOS “PACKS” + MARKETPLACE LAYER 💰
+
+GOAL
+Add a packaging system so prompts can be distributed as “packs”:
+- pack metadata (name, version, author, license, compatibility)
+- pack contents (prompt specs + eval cases)
+- install/uninstall packs into an org repo
+- support private “vendor packs” for selling
+
+CONCEPT
+A Pack is a folder or tarball that contains:
+- pack.yaml (manifest)
+- prompts/ (PromptSpec YAMLs)
+- eval/ (eval cases)
+- registry additions
+
+REPO ADDITIONS
+/promptos/packs/
+  /core/pack.yaml
+  /core/prompts/...
+  /core/eval/...
+/promptos/cli/pack.py (or pack.ts) pack manager
+
+PACK MANIFEST (pack.yaml)
+fields:
+- pack_id
+- name
+- version (semver)
+- description
+- author
+- license
+- tags
+- model_compatibility
+- prompts: list of prompt ids and relative paths
+- eval: list of eval paths (optional)
+
+FEATURES (MVP)
+1) pack build:
+   promptos pack build ./promptos/packs/core --out dist/core-pack.tgz
+
+2) pack install:
+   promptos pack install dist/core-pack.tgz
+   - installs into /promptos/packs_installed/<pack_id>/
+   - merges prompts into registry (regenerate index.json)
+   - runs validation: schema check + id conflicts
+
+3) pack uninstall:
+   promptos pack uninstall <pack_id>
+   - removes pack prompts from registry
+
+4) pack list:
+   promptos pack list
+
+VALIDATION RULES
+- no duplicate prompt ids unless explicitly namespaced pack_id:prompt_id
+- PromptSpec schema must validate
+- registry regenerates deterministically
+
+BONUS (SELLING)
+- support encrypted pack artifacts (optional)
+- support license key check (pluggable hook; not hardcoded)
+- create docs: “How to distribute Prompt Packs to customers”
+
+DELIVERABLES
+- packs folder + example “core” pack
+- pack manager CLI commands
+- docs: PACKS.md
+- CI check: validates all packs
+
+SUCCESS
+You can ship a pack as a file, install it into another org’s PromptOS, and it just works.

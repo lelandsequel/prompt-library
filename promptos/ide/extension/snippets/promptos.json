@@ -1,0 +1,206 @@
+{
+  "Insert Code Generation Prompt": {
+    "prefix": "@codegen-v1",
+    "body": [
+      "Generate {{language}} code for the following requirements:",
+      "",
+      "Requirements:",
+      "{{requirements}}",
+      "",
+      "Constraints:",
+      "{{constraints}}",
+      "",
+      "Context:",
+      "{{context}}"
+    ],
+    "description": "Insert Code Generation Prompt - Generate code based on requirements"
+  },
+  "Insert Code Review Prompt": {
+    "prefix": "@code-review-v1",
+    "body": [
+      "Please review the following code:",
+      "",
+      "```{{language}}",
+      "${1:/* code here */}",
+      "```",
+      "",
+      "Focus areas:",
+      "- Code quality",
+      "- Best practices",
+      "- Potential bugs",
+      "- Performance"
+    ],
+    "description": "Insert Code Review Prompt - Review code for issues"
+  },
+  "Insert Debugging Prompt": {
+    "prefix": "@debugging-v1",
+    "body": [
+      "Debug the following issue:",
+      "",
+      "Problem:",
+      "${1:Describe the problem}",
+      "",
+      "Expected behavior:",
+      "${2:What should happen}",
+      "",
+      "Actual behavior:",
+      "${3:What actually happens}",
+      "",
+      "Code:",
+      "```{{language}}",
+      "${4:/* code */}",
+      "```",
+      "",
+      "Error message:",
+      "${5:Error message if any}"
+    ],
+    "description": "Insert Debugging Prompt - Debug and troubleshoot code"
+  },
+  "Insert Documentation Prompt": {
+    "prefix": "@docs-gen-v1",
+    "body": [
+      "Generate documentation for the following code:",
+      "",
+      "```{{language}}",
+      "${1:/* code */}",
+      "```",
+      "",
+      "Documentation type: ${2|README,API Reference,User Guide,Inline Comments|}",
+      "Target audience: ${3|Developers,End Users,Technical Writers|}"
+    ],
+    "description": "Insert Documentation Generation Prompt - Generate documentation from code"
+  },
+  "Insert API Design Prompt": {
+    "prefix": "@api-design-v1",
+    "body": [
+      "Design an API with the following requirements:",
+      "",
+      "Purpose:",
+      "${1:What the API should do}",
+      "",
+      "Endpoints needed:",
+      "${2:List of endpoints}",
+      "",
+      "Data models:",
+      "${3:Data structures needed}",
+      "",
+      "Authentication:",
+      "${4:Auth requirements}"
+    ],
+    "description": "Insert API Design Prompt - Design REST APIs"
+  },
+  "Insert Test Cases Prompt": {
+    "prefix": "@test-cases-v1",
+    "body": [
+      "Write test cases for the following code:",
+      "",
+      "```{{language}}",
+      "${1:/* code */}",
+      "```",
+      "",
+      "Testing framework: ${2|Jest,Mocha,PyTest,JUnit|}",
+      "Test types: ${3|Unit,Integration,E2E|}",
+      "",
+      "Edge cases to cover:",
+      "${4:List edge cases}"
+    ],
+    "description": "Insert Test Cases Prompt - Write test cases"
+  },
+  "Insert Refactoring Prompt": {
+    "prefix": "@refactoring-v1",
+    "body": [
+      "Suggest refactoring for the following code:",
+      "",
+      "```{{language}}",
+      "${1:/* code */}",
+      "```",
+      "",
+      "Goals:",
+      "- ${2:Improve readability}",
+      "- ${3:Improve performance}",
+      "- ${4:Reduce complexity}",
+      "- ${5:Follow best practices}"
+    ],
+    "description": "Insert Refactoring Prompt - Refactor and improve code"
+  },
+  "Insert Security Review Prompt": {
+    "prefix": "@security-review-v1",
+    "body": [
+      "Perform a security review of the following code:",
+      "",
+      "```{{language}}",
+      "${1:/* code */}",
+      "```",
+      "",
+      "Focus areas:",
+      "- Input validation",
+      "- Authentication/Authorization",
+      "- Data protection",
+      "- Common vulnerabilities"
+    ],
+    "description": "Insert Security Review Prompt - Review code for security issues"
+  },
+  "Insert Performance Prompt": {
+    "prefix": "@performance-v1",
+    "body": [
+      "Optimize the following code for performance:",
+      "",
+      "```{{language}}",
+      "${1:/* code */}",
+      "```",
+      "",
+      "Current issues:",
+      "${2:Describe performance problems}",
+      "",
+      "Target metrics:",
+      "- ${3:Response time}",
+      "- ${4:Memory usage}",
+      "- ${5:CPU usage}"
+    ],
+    "description": "Insert Performance Optimization Prompt - Optimize code performance"
+  },
+  "Insert Architecture Prompt": {
+    "prefix": "@architecture-v1",
+    "body": [
+      "Document the architecture for:",
+      "",
+      "System:",
+      "${1:System name and purpose}",
+      "",
+      "Components:",
+      "${2:List of components}",
+      "",
+      "Data flow:",
+      "${3:How data flows through the system}",
+      "",
+      "Tech stack:",
+      "${4:Technologies used}"
+    ],
+    "description": "Insert Architecture Documentation Prompt - Document system architecture"
+  },
+  "Insert Incident Response Prompt": {
+    "prefix": "@incident-response-v1",
+    "body": [
+      "Incident Response:",
+      "",
+      "Incident:",
+      "${1:Description of the incident}",
+      "",
+      "Impact:",
+      "${2:Who/what is affected}",
+      "",
+      "Timeline:",
+      "${3:When it happened}",
+      "",
+      "Root cause:",
+      "${4:What caused it}",
+      "",
+      "Resolution:",
+      "${5:How it was fixed}",
+      "",
+      "Prevention:",
+      "${6:How to prevent recurrence}"
+    ],
+    "description": "Insert Incident Response Prompt - SRE incident response"
+  }
+}

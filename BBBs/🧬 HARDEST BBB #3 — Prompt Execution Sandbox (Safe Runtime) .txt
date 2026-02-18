@@ -1,0 +1,71 @@
+ANDROID 18 — BUILD PROMPTOS SANDBOX RUNTIME 🧱
+
+GOAL
+Execute prompts in a controlled runtime that:
+
+- isolates model calls
+- enforces token limits
+- enforces data redaction
+- logs usage
+- supports multiple providers
+- prevents unsafe output types
+
+============================================================
+ARCHITECTURE
+============================================================
+
+Create:
+
+/promptos/runtime/
+
+runtime.py:
+
+execute(prompt_id, inputs, model):
+
+Steps:
+
+1. load PromptSpec
+2. apply policy engine
+3. redact inputs
+4. render prompt
+5. call model adapter
+6. validate output schema
+7. log analytics
+8. return output
+
+============================================================
+MODEL ADAPTERS
+============================================================
+
+/promptos/runtime/adapters/
+
+- claude.py
+- openai.py
+- local.py
+
+Unified interface:
+
+generate(prompt, model, params)
+
+============================================================
+OUTPUT GUARD
+============================================================
+
+If PromptSpec.outputs.schema exists:
+
+validate output structure
+
+Fail if mismatch.
+
+============================================================
+DELIVERABLES
+============================================================
+
+- runtime engine
+- adapters
+- guards
+- docs: RUNTIME.md
+
+SUCCESS
+
+All PromptOS execution flows through controlled runtime.

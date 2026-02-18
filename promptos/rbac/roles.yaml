@@ -1,0 +1,40 @@
+# PromptOS RBAC - Role Definitions
+# Each role has a set of permissions
+
+roles:
+  admin:
+    description: Full system access
+    permissions:
+      - read
+      - create
+      - update
+      - delete
+      - eval
+      - publish
+
+  editor:
+    description: Create and update prompts
+    permissions:
+      - read
+      - create
+      - update
+
+  viewer:
+    description: Read-only access
+    permissions:
+      - read
+
+  auditor:
+    description: Read and evaluate prompts
+    permissions:
+      - read
+      - eval
+
+# Action to description mapping
+actions:
+  read: View prompts and templates
+  create: Create new prompts
+  update: Modify existing prompts
+  delete: Remove prompts
+  eval: Evaluate/test prompts
+  publish: Deploy prompts to production

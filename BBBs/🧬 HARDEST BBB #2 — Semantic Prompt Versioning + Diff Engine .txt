@@ -1,0 +1,69 @@
+ANDROID 18 — BUILD SEMANTIC PROMPT DIFF + VERSIONING 🔬
+
+GOAL
+Detect meaningful prompt changes beyond text diff.
+
+We want:
+
+- role changed
+- constraints changed
+- output schema changed
+- examples changed
+- intent changed
+
+============================================================
+ENGINE
+============================================================
+
+Create:
+
+/promptos/diff/promptdiff.py
+
+Logic:
+
+Parse PromptSpec → structured object:
+
+- role
+- instructions
+- examples
+- inputs.schema
+- outputs.schema
+
+Compare old vs new:
+
+Output:
+
+{
+  "change_type": "MAJOR|MINOR|PATCH",
+  "fields_changed": ["role","examples"],
+  "semantic_impact": "behavior-change",
+  "recommended_version": "2.0.0"
+}
+
+============================================================
+CI HOOK
+============================================================
+
+On PR:
+
+If prompt changed:
+
+- run diff engine
+- verify version bump matches semantic change
+- fail if mismatch
+
+Example:
+
+role changed but version only PATCH → fail
+
+============================================================
+DELIVERABLES
+============================================================
+
+- diff engine
+- CI check
+- VERSIONING.md update
+
+SUCCESS
+
+PromptOS enforces semantic versioning automatically.

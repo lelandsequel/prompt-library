@@ -1,0 +1,75 @@
+ANDROID 18 — BUILD “PROMPTOS IDE” (VSCode/Cursor Extension) 🔥
+
+GOAL
+Ship a VSCode extension that:
+- reads promptos/registry/index.json + PromptSpec files
+- exposes prompts in Command Palette
+- prompts user for inputs (based on PromptSpec inputs.schema)
+- renders final prompt via PromptOS loader
+- inserts result into editor OR copies to clipboard
+- supports Cursor (Cursor uses VSCode extension ecosystem)
+
+REPO ADDITIONS
+Create folder:
+/promptos/ide/vscode-extension/
+
+TECH
+TypeScript + VSCode Extension API
+Use esbuild or tsup for bundling.
+
+FEATURES (MVP)
+1) Command: “PromptOS: Run Prompt…”
+   - quickpick list of prompt titles (from registry)
+   - then input UI for required fields
+   - then render prompt (using loader logic) and copy to clipboard + insert into active editor
+
+2) Commands auto-generated per prompt:
+   - “PromptOS: <Prompt Name>”
+   - triggers directly, skips selection
+
+3) Settings:
+   - promptos.registryPath (default: promptos/registry/index.json)
+   - promptos.insertMode: "clipboard" | "insert" | "both"
+   - promptos.model: default model compatibility filter
+
+4) Output panel logs: “PromptOS”
+
+IMPLEMENTATION STEPS
+A) scaffold extension:
+- package.json contributes.commands
+- activationEvents
+- src/extension.ts
+
+B) registry reader:
+- read index.json
+- for each entry load prompt file path
+- parse YAML PromptSpec (yaml npm package)
+
+C) input form:
+- read PromptSpec.inputs.schema (JSON Schema)
+- minimal: only handle type=string/number/boolean/enums/required
+- ask sequential prompts using showInputBox / showQuickPick
+- build inputs object
+
+D) renderer:
+- implement same render logic as CLI load_prompt:
+  - substitute {{variable}} in prompt body
+  - or if your PromptSpec uses a different template syntax, match it
+- optional: include “role” as system prefix in rendered output
+
+E) result actions:
+- copy to clipboard
+- optionally insert at cursor selection
+
+DELIVERABLES
+- promptos/ide/vscode-extension/ (complete)
+- README: how to install locally (vsce package) + how to use in Cursor
+- add “IDE Integration” section to root README
+
+BONUS (IF EASY)
+- support multi-file prompt: if prompt outputs include files[], create files in workspace (guarded)
+- prompt search by tag/category
+
+SUCCESS
+I can open VSCode/Cursor → Command Palette → “PromptOS: …” → run prompt → get output in editor.
+Ship it.

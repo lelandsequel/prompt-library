@@ -1,0 +1,120 @@
+GOAL
+Add Continuous Integration evaluation to PromptOS so that prompt changes are automatically tested on pull requests.
+
+Repo: prompt-library
+
+============================================================
+STEP 1 — CI WORKFLOW
+============================================================
+
+Create:
+
+.github/workflows/promptos-eval.yml
+
+Contents:
+
+name: PromptOS Eval
+
+on:
+  pull_request:
+    paths:
+      - "promptos/**"
+  push:
+    branches: [main]
+    paths:
+      - "promptos/**"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt || true
+
+      - name: Run PromptOS Eval
+        run: |
+          python promptos/eval/runner.py --ci --report report.json
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptos-eval-report
+          path: report.json
+
+============================================================
+STEP 2 — CI MODE IN RUNNER
+============================================================
+
+Ensure runner.py supports:
+
+--ci
+--report <path>
+
+Behavior in CI mode:
+
+- run all eval cases
+- collect pass/fail
+- write JSON report:
+
+{
+  "total": 12,
+  "passed": 11,
+  "failed": 1,
+  "failures": [
+    {
+      "prompt_id": "python-function",
+      "case": "case3.yaml",
+      "reason": "missing docstring"
+    }
+  ]
+}
+
+If any failures:
+exit code 1
+
+============================================================
+STEP 3 — OPTIONAL DIFF SCOPING
+============================================================
+
+If possible:
+
+In CI mode detect changed prompts:
+
+git diff --name-only origin/main
+
+Only run evals for changed prompt IDs.
+
+Fallback: run all.
+
+============================================================
+STEP 4 — BADGE
+============================================================
+
+Add to README:
+
+![PromptOS Eval](https://github.com/lelandsequel/prompt-library/actions/workflows/promptos-eval.yml/badge.svg)
+
+============================================================
+STEP 5 — SUCCESS CRITERIA
+============================================================
+
+On PR touching /promptos:
+
+- GitHub Action runs
+- eval executes
+- failures block merge
+- report artifact available
+
+PromptOS now has CI eval.
+
+Proceed.

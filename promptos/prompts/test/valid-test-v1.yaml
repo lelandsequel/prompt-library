@@ -1,0 +1,50 @@
+# Valid Test Prompt v1.0.0
+
+id: test-valid-v1
+name: Valid Test Prompt
+description: This is a valid test prompt for policy validation
+category: codegen
+role: software engineer
+
+model_compatibility:
+  - claude-sonnet-4-6
+  - gpt-4o
+
+version: "1.0.0"
+author: Test
+last_updated: "2026-02-17T23:00:00Z"
+
+tags:
+  - test
+
+inputs:
+  - name: test_input
+    label: Test Input
+    type: text
+    required: true
+    placeholder: Enter test value
+
+outputs:
+  - name: output
+    type: text
+
+prompt: |
+  This is a test prompt with {{test_input}}
+
+  Please process this input and return the result.
+
+examples:
+  - name: test_example
+    inputs:
+      test_input: "hello"
+    expected_output: Should process the input
+
+usage: Testing policy validation
+
+contexts:
+  - Testing
+
+instructions:
+  - Follow best practices
+
+dependencies: []

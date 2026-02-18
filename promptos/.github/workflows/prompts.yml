@@ -1,0 +1,59 @@
+name: PromptOS Evaluation
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: eval/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd eval
+          npm install
+      
+      - name: Run evaluation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'claude-sonnet-4-20250514' }}
+        run: |
+          cd eval
+          node ci-runner.js --output=test-results.xml
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: eval/test-results.xml
+      
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: PromptOS Eval
+          path: eval/test-results.xml
+          reporter: java-junit
+      
+      - name: Check for failures
+        run: |
+          if grep -q 'failures="[1-9]' eval/test-results.xml; then
+            echo "Evaluation failed - some tests did not pass"
+            exit 1
+          fi
+          echo "All evaluations passed!"
