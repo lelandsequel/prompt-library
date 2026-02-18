@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JourdanLabs Prompt Library — IDE</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#1e1e1e;--bg-dark:#141414;--bg-side:#252526;--bg-tab:#2d2d2d;--bg-hover:#2a2d2e;
+    --bg-active:#1e1e1e;--bg-input:#3c3c3c;--border:#3e3e42;--accent:#007acc;--accent2:#0e639c;
+    --text:#cccccc;--text-dim:#858585;--text-muted:#6a6a6a;--text-bright:#d4d4d4;
+    --green:#4ec9b0;--blue:#569cd6;--blue2:#4fc1ff;--purple:#c586c0;
+    --yellow:#dcdcaa;--orange:#ce9178;--red:#f44747;--teal:#4ec9b0;--status-bg:#007acc;
+    --font-mono:'Cascadia Code','Fira Code','Consolas','Courier New',monospace;
+    --font-ui:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
+  }
+  html,body{height:100%;background:var(--bg-dark);color:var(--text);font-family:var(--font-ui);font-size:13px;overflow:hidden}
+  .app{display:grid;grid-template-rows:36px 35px 1fr 22px;grid-template-columns:48px 220px 1fr;height:100vh;
+    grid-template-areas:"title-bar title-bar title-bar""actbar tabs tabs""actbar sidebar main""statusbar statusbar statusbar"}
+  .title-bar{grid-area:title-bar;background:#323233;display:flex;align-items:center;padding:0 12px;gap:8px;
+    border-bottom:1px solid var(--bg-dark);user-select:none;-webkit-app-region:drag}
+  .title-bar__dots{display:flex;gap:6px}
+  .dot{width:12px;height:12px;border-radius:50%;cursor:pointer;transition:filter .15s}
+  .dot:hover{filter:brightness(1.3)}
+  .dot--red{background:#ff5f57}.dot--yellow{background:#febc2e}.dot--green{background:#28c840}
+  .title-bar__brand{margin-left:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim)}
+  .brand-logo{width:18px;height:18px;background:linear-gradient(135deg,var(--accent),var(--teal));border-radius:3px;
+    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:var(--font-mono)}
+  .brand-name{color:#cccccc;font-weight:400}
+  .brand-sep{color:var(--text-muted)}
+  .brand-file{color:var(--text-dim);font-family:var(--font-mono);font-size:12px}
+  .title-bar__menu{margin-left:auto;display:flex;gap:20px;font-size:12px;color:var(--text-dim)}
+  .title-bar__menu span{cursor:pointer;padding:2px 4px;border-radius:3px;transition:background .15s}
+  .title-bar__menu span:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  .title-bar__win-btns{margin-left:16px;display:flex;gap:2px}
+  .win-btn{width:46px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    color:var(--text-dim);font-size:11px;transition:background .15s}
+  .win-btn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  .win-btn--close:hover{background:#c42b1c;color:#fff}
+  .actbar{grid-area:actbar;background:#333333;display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:2px;
+    border-right:1px solid var(--border)}
+  .act-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    border-radius:4px;color:var(--text-muted);font-size:18px;transition:color .15s;position:relative}
+  .act-icon:hover{color:var(--text)}
+  .act-icon.active{color:var(--text-bright);border-left:2px solid var(--accent);margin-left:-2px}
+  .act-icon svg{width:22px;height:22px;fill:currentColor}
+  .tabbar{grid-area:tabs;background:var(--bg-dark);display:flex;align-items:flex-end;border-bottom:1px solid var(--border);overflow:hidden}
+  .tab{display:flex;align-items:center;gap:6px;padding:0 14px 0 12px;height:34px;background:var(--bg-tab);
+    border-right:1px solid var(--border);border-top:1px solid transparent;cursor:pointer;color:var(--text-dim);font-size:12px;
+    white-space:nowrap;user-select:none;transition:color .12s,background .12s;font-family:var(--font-mono);position:relative}
+  .tab:hover{color:var(--text);background:var(--bg-hover)}
+  .tab.active{background:var(--bg);color:var(--text-bright);border-top:1px solid var(--accent);
+    border-bottom:1px solid var(--bg);margin-bottom:-1px}
+  .tab__dot{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0}
+  .tab__ext{color:var(--text-muted)}
+  .tab__close{margin-left:6px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
+    border-radius:3px;opacity:0;transition:opacity .12s;font-size:14px;line-height:1}
+  .tab:hover .tab__close{opacity:.6}
+  .tab__close:hover{opacity:1!important;background:rgba(255,255,255,.1)}
+  .tab--custom{margin-left:8px}
+  .tab--custom .tab__dot{background:var(--purple)}
+  .tabbar__overflow{margin-left:auto;padding:0 10px;color:var(--text-muted);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;height:34px}
+  .tabbar__overflow:hover{color:var(--text)}
+  .sidebar{grid-area:sidebar;background:var(--bg-side);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .sidebar__header{padding:10px 12px 6px;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-dim);
+    text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;user-select:none}
+  .sidebar__header-icons{display:flex;gap:6px;color:var(--text-muted);font-size:14px}
+  .sidebar__header-icons span{cursor:pointer}
+  .sidebar__header-icons span:hover{color:var(--text)}
+  .sidebar__search{margin:4px 8px 8px;position:relative}
+  .sidebar__search input{width:100%;background:var(--bg-input);border:1px solid transparent;border-radius:3px;
+    padding:4px 8px 4px 26px;color:var(--text);font-size:12px;font-family:var(--font-ui);outline:none;transition:border-color .15s}
+  .sidebar__search input::placeholder{color:var(--text-muted)}
+  .sidebar__search input:focus{border-color:var(--accent)}
+  .sidebar__search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none}
+  .tree{overflow-y:auto;flex:1}
+  .tree::-webkit-scrollbar{width:6px}
+  .tree::-webkit-scrollbar-track{background:transparent}
+  .tree::-webkit-scrollbar-thumb{background:#424242;border-radius:3px}
+  .tree-section{margin-bottom:2px}
+  .tree-section__head{display:flex;align-items:center;gap:5px;padding:3px 8px;cursor:pointer;user-select:none;
+    font-size:12px;color:var(--text-dim);transition:background .1s}
+  .tree-section__head:hover{background:var(--bg-hover)}
+  .tree-section__arrow{font-size:10px;transition:transform .15s;color:var(--text-muted);width:12px;flex-shrink:0}
+  .tree-section.open .tree-section__arrow{transform:rotate(90deg)}
+  .tree-section__icon{font-size:14px}
+  .tree-section__label{font-size:12px;font-weight:600}
+  .tree-section__count{margin-left:auto;font-size:10px;background:#3c3c3c;border-radius:10px;padding:1px 6px;color:var(--text-muted)}
+  .tree-items{display:none}
+  .tree-section.open .tree-items{display:block}
+  .tree-item{display:flex;align-items:center;gap:8px;padding:3px 8px 3px 24px;cursor:pointer;
+    font-size:12px;color:var(--text-dim);transition:background .1s;border-left:2px solid transparent;font-family:var(--font-mono)}
+  .tree-item:hover{background:var(--bg-hover);color:var(--text)}
+  .tree-item.active{background:rgba(0,122,204,.1);border-left-color:var(--accent);color:var(--text-bright)}
+  .tree-item__icon{font-size:12px;flex-shrink:0}
+  .tree-item__name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tree-item__badge{font-size:9px;background:var(--accent);border-radius:8px;padding:1px 5px;color:#fff;font-weight:600}
+  .main{grid-area:main;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .breadcrumb{height:24px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;
+    padding:0 14px;gap:4px;font-size:12px;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
+  .breadcrumb__sep{color:var(--text-muted)}
+  .breadcrumb__item{cursor:pointer}
+  .breadcrumb__item:hover{color:var(--text)}
+  .breadcrumb__item.current{color:var(--text-dim)}
+  .editor-body{display:grid;grid-template-columns:240px 1fr;flex:1;overflow:hidden}
+  .template-list{background:#1e1e1e;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .template-list__header{padding:8px 12px 6px;font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--text-muted);
+    text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .template-list__header-right{display:flex;gap:8px;color:var(--text-muted)}
+  .template-list__header-right span{cursor:pointer;font-size:14px}
+  .template-list__header-right span:hover{color:var(--text)}
+  .template-list__items{overflow-y:auto;flex:1}
+  .template-list__items::-webkit-scrollbar{width:4px}
+  .template-list__items::-webkit-scrollbar-thumb{background:#424242}
+  .tpl-item{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .1s}
+  .tpl-item:hover{background:var(--bg-hover)}
+  .tpl-item.active{background:rgba(0,122,204,.08);border-left:2px solid var(--accent)}
+  .tpl-item__top{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+  .tpl-item__icon{font-size:14px}
+  .tpl-item__name{font-family:var(--font-mono);font-size:12px;color:var(--yellow);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tpl-item.active .tpl-item__name{color:var(--blue2)}
+  .tpl-item__ext{color:var(--text-muted);font-size:11px;font-family:var(--font-mono)}
+  .tpl-item__desc{font-size:11px;color:var(--text-muted);line-height:1.4;padding-left:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tpl-item__tags{display:flex;gap:4px;margin-top:4px;padding-left:20px}
+  .tpl-tag{font-size:9px;padding:1px 5px;border-radius:3px;font-family:var(--font-mono);border:1px solid}
+  .tpl-tag--blue{color:var(--blue);border-color:rgba(86,156,214,.3);background:rgba(86,156,214,.07)}
+  .tpl-tag--green{color:var(--green);border-color:rgba(78,201,176,.3);background:rgba(78,201,176,.07)}
+  .tpl-tag--purple{color:var(--purple);border-color:rgba(197,134,192,.3);background:rgba(197,134,192,.07)}
+  .tpl-tag--orange{color:var(--orange);border-color:rgba(206,145,120,.3);background:rgba(206,145,120,.07)}
+  .editor-pane{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .editor-toolbar{height:32px;background:#252526;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0}
+  .editor-toolbar__group{display:flex;gap:4px;align-items:center}
+  .et-btn{padding:3px 10px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--text-dim);
+    font-size:11px;cursor:pointer;transition:background .12s,color .12s;font-family:var(--font-ui)}
+  .et-btn:hover{background:var(--bg-hover);color:var(--text)}
+  .et-btn.primary{background:var(--accent);border-color:var(--accent2);color:#fff}
+  .et-btn.primary:hover{background:#1177bb}
+  .et-sep{width:1px;height:18px;background:var(--border);margin:0 4px}
+  .editor-toolbar__right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .editor-toolbar__lang{font-size:11px;color:var(--text-muted);font-family:var(--font-mono);cursor:pointer}
+  .editor-toolbar__lang:hover{color:var(--text)}
+  .editor-toolbar__pos{font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
+  .code-editor{flex:1;display:flex;overflow:hidden;position:relative}
+  .line-numbers{padding:14px 0;text-align:right;background:var(--bg);color:var(--text-muted);font-size:13px;
+    font-family:var(--font-mono);line-height:1.6;min-width:48px;padding-right:12px;padding-left:8px;user-select:none;flex-shrink:0;
+    border-right:1px solid rgba(255,255,255,.04)}
+  .line-numbers__num{display:block}
+  .line-numbers__num.active{color:var(--text-dim)}
+  .code-content{flex:1;overflow:auto;padding:14px 16px;font-family:var(--font-mono);font-size:13px;line-height:1.6;
+    color:var(--text-bright);tab-size:2;cursor:text}
+  .code-content::-webkit-scrollbar{width:8px;height:8px}
+  .code-content::-webkit-scrollbar-track{background:transparent}
+  .code-content::-webkit-scrollbar-thumb{background:#424242;border-radius:4px}
+  .code-content::-webkit-scrollbar-corner{background:transparent}
+  .code-line{display:flex;min-height:20.8px;white-space:pre}
+  .code-line.highlight-line{background:rgba(255,255,255,.04)}
+  .kw{color:var(--blue)}.fn{color:var(--yellow)}.str{color:var(--orange)}.num{color:#b5cea8}
+  .cmt{color:#6a9955;font-style:italic}.var{color:var(--blue2)}.op{color:var(--text)}
+  .punc{color:var(--text-dim)}.type{color:var(--teal)}.attr{color:#9cdcfe}.val{color:var(--orange)}.tag{color:var(--blue)}
+  .minimap{width:60px;background:#1a1a1a;border-left:1px solid rgba(255,255,255,.04);padding:14px 4px;flex-shrink:0;overflow:hidden;position:relative}
+  .minimap-line{height:3px;margin-bottom:2px;border-radius:1px;opacity:.35}
+  .minimap-viewport{position:absolute;top:14px;left:0;right:0;height:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+  .custom-panel{flex:1;display:none;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .custom-panel.visible{display:flex}
+  .custom-editor-header{padding:12px 16px;border-bottom:1px solid var(--border);background:#252526}
+  .custom-editor-header h2{font-size:13px;color:var(--text-bright);font-family:var(--font-mono);font-weight:400;margin-bottom:2px}
+  .custom-editor-header p{font-size:11px;color:var(--text-muted)}
+  .custom-editor-body{flex:1;display:flex;gap:0;overflow:hidden}
+  .custom-form{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+  .custom-form::-webkit-scrollbar{width:6px}
+  .custom-form::-webkit-scrollbar-thumb{background:#424242}
+  .form-group{display:flex;flex-direction:column;gap:5px}
+  .form-label{font-size:11px;color:var(--text-dim);font-family:var(--font-mono);display:flex;align-items:center;gap:6px}
+  .form-label .label-type{color:var(--teal)}
+  .form-label .label-name{color:var(--blue2)}
+  .form-label .label-eq{color:var(--text-dim)}
+  .form-input,.form-textarea,.form-select{background:#2d2d2d;border:1px solid var(--border);border-radius:3px;
+    color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;outline:none;transition:border-color .15s;width:100%}
+  .form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--accent)}
+  .form-textarea{resize:vertical;min-height:80px}
+  .form-select option{background:var(--bg-side)}
+  .custom-preview{width:300px;border-left:1px solid var(--border);display:flex;flex-direction:column;background:#1a1a1a}
+  .custom-preview__header{padding:8px 12px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:6px}
+  .custom-preview__header::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block}
+  .custom-preview__body{flex:1;padding:12px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.7;
+    overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+  .custom-preview__body::-webkit-scrollbar{width:4px}
+  .custom-preview__body::-webkit-scrollbar-thumb{background:#424242}
+  .custom-preview__actions{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px}
+  .statusbar{grid-area:statusbar;background:var(--status-bg);display:flex;align-items:center;padding:0 10px;gap:0;
+    font-size:12px;color:rgba(255,255,255,.9);font-family:var(--font-mono);user-select:none}
+  .statusbar__item{padding:0 8px;height:22px;display:flex;align-items:center;gap:4px;cursor:pointer;transition:background .12s;white-space:nowrap}
+  .statusbar__item:hover{background:rgba(255,255,255,.15)}
+  .statusbar__right{margin-left:auto;display:flex}
+  .statusbar__dot{width:6px;height:6px;border-radius:50%;background:#4ec9b0}
+  .panel-tabs{height:28px;background:#252526;border-top:1px solid var(--border);display:flex;align-items:flex-end;padding:0 8px;gap:0;flex-shrink:0}
+  .panel-tab{padding:0 12px;height:26px;display:flex;align-items:center;font-size:11px;color:var(--text-muted);cursor:pointer;
+    border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:.8px;transition:color .12s}
+  .panel-tab:hover{color:var(--text)}
+  .panel-tab.active{color:var(--text-bright);border-bottom-color:var(--accent)}
+  *{scrollbar-width:thin;scrollbar-color:#424242 transparent}
+  [data-tip]{position:relative}
+  [data-tip]::after{content:attr(data-tip);position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:8px;
+    background:#252526;color:var(--text);padding:3px 7px;border-radius:3px;font-size:11px;border:1px solid var(--border);
+    white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;font-family:var(--font-ui)}
+  [data-tip]:hover::after{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="title-bar">
+    <div class="title-bar__dots">
+      <div class="dot dot--red"></div><div class="dot dot--yellow"></div><div class="dot dot--green"></div>
+    </div>
+    <div class="title-bar__brand">
+      <div class="brand-logo">J</div>
+      <span class="brand-name">JourdanLabs</span>
+      <span class="brand-sep">›</span>
+      <span class="brand-file">Prompt Library</span>
+    </div>
+    <div class="title-bar__menu">
+      <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+    </div>
+    <div class="title-bar__win-btns">
+      <div class="win-btn win-btn--close">✕</div>
+    </div>
+  </div>
+  <div class="actbar">
+    <div class="act-icon active" data-tip="Explorer"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></div>
+    <div class="act-icon" data-tip="Search"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+    <div class="act-icon" data-tip="Source Control"><svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></div>
+    <div class="act-icon" data-tip="Extensions"><svg viewBox="0 0 24 24"><path d="M20.71 4.04c-.18-.18-.43-.29-.71-.29H4c-.28 0-.53.11-.71.29l-.04.04v14.92l.04.04c.18.18.43.29.71.29H20c.28 0 .53-.11.71-.29l.04-.04V4.08l-.04-.04zM12 17.5c-3.04 0-5.5-2.46-5.5-5.5S8.96 6.5 12 6.5s5.5 2.46 5.5 5.5-2.46 5.5-5.5 5.5z"/></svg></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab active"><span class="tab__dot"></span>prompts<span class="tab__ext">.json</span><span class="tab__close">✕</span></div>
+    <div class="tab tab--custom" onclick="document.querySelector('.custom-panel').classList.toggle('visible');document.querySelector('.editor-pane').classList.toggle('hidden')">
+      <span class="tab__dot"></span>Custom Prompt<span class="tab__close">✕</span>
+    </div>
+    <div class="tabbar__overflow">⋯</div>
+  </div>
+  <div class="sidebar">
+    <div class="sidebar__header">
+      <span>Explorer</span>
+      <div class="sidebar__header-icons"><span>⤓</span><span>✕</span></div>
+    </div>
+    <div class="sidebar__search"><span class="sidebar__search-icon">⌕</span><input type="text" placeholder="Search templates..."></div>
+    <div class="tree">
+      <div class="tree-section open">
+        <div class="tree-section__head"><span class="tree-section__arrow">▶</span><span class="tree-section__icon">📁</span><span class="tree-section__label">PROMPTS</span><span class="tree-section__count">12</span></div>
+        <div class="tree-items">
+          <div class="tree-item"><span class="tree-item__icon">📄</span><span class="tree-item__name">system-prompt.ts</span></div>
+          <div class="tree-item"><span class="tree-item__icon">📄</span><span class="tree-item__name">user-context.ts</span></div>
+          <div class="tree-item active"><span class="tree-item__icon">📄</span><span class="tree-item__name">template-*.json</span><span class="tree-item__badge">12</span></div>
+        </div>
+      </div>
+      <div class="tree-section open">
+        <div class="tree-section__head"><span class="tree-section__arrow">▶</span><span class="tree-section__icon">📁</span><span class="tree-section__label">CATEGORIES</span><span class="tree-section__count">4</span></div>
+        <div class="tree-items">
+          <div class="tree-item"><span class="tree-item__icon">🗂️</span><span class="tree-item__name">code-review</span></div>
+          <div class="tree-item"><span class="tree-item__icon">🗂️</span><span class="tree-item__name">writing</span></div>
+          <div class="tree-item"><span class="tree-item__icon">🗂️</span><span class="tree-item__name">analysis</span></div>
+          <div class="tree-item"><span class="tree-item__icon">🗂️</span><span class="tree-item__name">general</span></div>
+        </div>
+      </div>
+      <div class="tree-section">
+        <div class="tree-section__head"><span class="tree-section__arrow">▶</span><span class="tree-section__icon">📁</span><span class="tree-section__label">CUSTOM</span><span class="tree-section__count">2</span></div>
+        <div class="tree-items">
+          <div class="tree-item"><span class="tree-item__icon">📄</span><span class="tree-item__name">my-template.ts</span></div>
+          <div class="tree-item"><span class="tree-item__icon">📄</span><span class="tree-item__name">scratch.pad</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="breadcrumb"><span class="breadcrumb__item">PROMPTS</span><span class="breadcrumb__sep">›</span><span class="breadcrumb__item">CATEGORIES</span><span class="breadcrumb__sep">›</span><span class="breadcrumb__item current">code-review</span></div>
+    <div class="editor-body">
+      <div class="template-list">
+        <div class="template-list__header">
+          <span>code-review</span>
+          <div class="template-list__header-right"><span>↕</span><span>⊕</span></div>
+        </div>
+        <div class="template-list__items">
+          <div class="tpl-item active">
+            <div class="tpl-item__top"><span class="tpl-item__icon">📄</span><span class="tpl-item__name">security-audit</span><span class="tpl-item__ext">.json</span></div>
+            <div class="tpl-item__desc">Comprehensive security vulnerability scanner</div>
+            <div class="tpl-item__tags"><span class="tpl-tag tpl-tag--blue">security</span><span class="tpl-tag tpl-tag--green">critical</span></div>
+          </div>
+          <div class="tpl-item">
+            <div class="tpl-item__top"><span class="tpl-item__icon">📄</span><span class="tpl-item__name">performance-review</span><span class="tpl-item__ext">.json</span></div>
+            <div class="tpl-item__desc">Analyze code for performance bottlenecks</div>
+            <div class="tpl-item__tags"><span class="tpl-tag tpl-tag--orange">performance</span></div>
+          </div>
+          <div class="tpl-item">
+            <div class="tpl-item__top"><span class="tpl-item__icon">📄</span><span class="tpl-item__name">refactor-suggestions</span><span class="tpl-item__ext">.json</span></div>
+            <div class="tpl-item__desc">Suggest improvements for code quality</div>
+            <div class="tpl-item__tags"><span class="tpl-tag tpl-tag--purple">refactor</span></div>
+          </div>
+          <div class="tpl-item">
+            <div class="tpl-item__top"><span class="tpl-item__icon">📄</span><span class="tpl-item__name">test-coverage</span><span class="tpl-item__ext">.json</span></div>
+            <div class="tpl-item__desc">Generate unit tests for uncovered paths</div>
+            <div class="tpl-item__tags"><span class="tpl-tag tpl-tag--blue">testing</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="editor-pane">
+        <div class="editor-toolbar">
+          <div class="editor-toolbar__group"><button class="et-btn">↩ Undo</button><button class="et-btn">↪ Redo</button></div>
+          <div class="et-sep"></div>
+          <div class="editor-toolbar__group"><button class="et-btn primary">▶ Run</button><button class="et-btn">📋 Copy</button></div>
+          <div class="editor-toolbar__right">
+            <span class="editor-toolbar__lang">JSON</span>
+            <span class="editor-toolbar__pos">Ln 1, Col 1</span>
+          </div>
+        </div>
+        <div class="code-editor">
+          <div class="line-numbers">
+            <span class="line-numbers__num">1</span><span class="line-numbers__num">2</span><span class="line-numbers__num">3</span><span class="line-numbers__num">4</span><span class="line-numbers__num">5</span><span class="line-numbers__num">6</span><span class="line-numbers__num">7</span><span class="line-numbers__num">8</span><span class="line-numbers__num">9</span><span class="line-numbers__num">10</span><span class="line-numbers__num">11</span><span class="line-numbers__num">12</span><span class="line-numbers__num">13</span><span class="line-numbers__num">14</span><span class="line-numbers__num">15</span>
+          </div>
+          <div class="code-content"><div class="code-line"><span class="punc">{</span></div>
+<div class="code-line">  <span class="attr">"name"</span><span class="punc">:</span> <span class="str">"security-audit"</span><span class="punc">,</span></div>
+<div class="code-line">  <span class="attr">"version"</span><span class="punc">:</span> <span class="str">"1.0.0"</span><span class="punc">,</span></div>
+<div class="code-line">  <span class="attr">"description"</span><span class="punc">:</span> <span class="str">"Comprehensive security vulnerability scanner"</span><span class="punc">,</span></div>
+<div class="code-line">  <span class="attr">"category"</span><span class="punc">:</span> <span class="str">"code-review"</span><span class="punc">,</span></div>
+<div class="code-line">  </div>
+<div class="code-line">  <span class="attr">"variables"</span><span class="punc">:</span> <span class="punc">[</span></div>
+<div class="code-line">    <span class="punc">{</span></div>
+<div class="code-line">      <span class="attr">"name"</span><span class="punc">:</span> <span class="str">"code"</span><span class="punc">,</span></div>
+<div class="code-line">      <span class="attr">"type"</span><span class="punc">:</span> <span class="str">"string"</span><span class="punc">,</span></div>
+<div class="code-line">      <span class="attr">"required"</span><span class="punc">:</span> <span class="kw">true</span><span class="punc">,</span></div>
+<div class="code-line">      <span class="attr">"description"</span><span class="punc">:</span> <span class="str">"The code to audit"</span></div>
+<div class="code-line">    <span class="punc">}</span></div>
+<div class="code-line">  <span class="punc">]</span><span class="punc">,</span></div>
+<div class="code-line">  </div>
+<div class="code-line">  <span class="attr">"prompt"</span><span class="punc">:</span> <span class="str">"You are a security expert..."</span></div>
+<div class="code-line"><span class="punc">}</span></div></div>
+          <div class="minimap">
+            <div class="minimap-viewport"></div>
+            <div class="minimap-line" style="width:80%;background:var(--blue)"></div>
+            <div class="minimap-line" style="width:60%;background:var(--teal)"></div>
+            <div class="minimap-line" style="width:90%;background:var(--purple)"></div>
+            <div class="minimap-line" style="width:45%;background:var(--yellow)"></div>
+            <div class="minimap-line" style="width:70%;background:var(--orange)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="custom-panel">
+        <div class="custom-editor-header">
+          <h2>✎ Custom Prompt</h2>
+          <p>Create your own prompt template</p>
+        </div>
+        <div class="custom-editor-body">
+          <div class="custom-form">
+            <div class="form-group">
+              <label class="form-label"><span class="label-type">const</span> <span class="label-name">name</span> <span class="label-eq">=</span></label>
+              <input type="text" class="form-input" placeholder="my-custom-prompt">
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span class="label-type">const</span> <span class="label-name">category</span> <span class="label-eq">=</span></label>
+              <select class="form-select">
+                <option>code-review</option>
+                <option>writing</option>
+                <option>analysis</option>
+                <option>general</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span class="label-type">const</span> <span class="label-name">description</span> <span class="label-eq">=</span></label>
+              <input type="text" class="form-input" placeholder="Brief description...">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label class="form-label"><span class="label-type">const</span> <span class="label-name">prompt</span> <span class="label-eq">=</span></label>
+              <textarea class="form-textarea" style="flex:1;min-height:200px" placeholder="Write your prompt template here..."></textarea>
+            </div>
+          </div>
+          <div class="custom-preview">
+            <div class="custom-preview__header">Preview</div>
+            <div class="custom-preview__body">// Your prompt will appear here as you type...</div>
+            <div class="custom-preview__actions">
+              <button class="et-btn primary" style="flex:1">Save</button>
+              <button class="et-btn" style="flex:1">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-tabs">
+      <div class="panel-tab active">Problems</div>
+      <div class="panel-tab">Output</div>
+      <div class="panel-tab">Debug Console</div>
+      <div class="panel-tab">Terminal</div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <div class="statusbar__item"><span class="statusbar__dot"></span> main*</div>
+    <div class="statusbar__item">0 ⚠</div>
+    <div class="statusbar__item">0 ❋</div>
+    <div class="statusbar__right">
+      <div class="statusbar__item">Ln 1, Col 1</div>
+      <div class="statusbar__item">UTF-8</div>
+      <div class="statusbar__item">JSON</div>
+      <div class="statusbar__item">Prettier</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

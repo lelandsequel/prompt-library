@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JourdanLabs // Prompt Library</title>
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --black: #000000;
+    --white: #ffffff;
+    --gray-100: #e8e8e8;
+    --gray-200: #c0c0c0;
+    --gray-400: #555555;
+    --gray-600: #333333;
+    --border: 3px solid #000;
+    --border-thin: 2px solid #000;
+    --accent: #000000;
+    --highlight: #ffff00;
+    --font: 'Courier New', Courier, monospace;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font);
+    background: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  .app {
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    grid-template-columns: 240px 320px 1fr;
+    grid-template-areas:
+      "header header header"
+      "sidebar list panel";
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--border);
+    padding: 0 20px;
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .header-brand .logo {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+  }
+
+  .header-brand .logo span {
+    color: var(--highlight);
+  }
+
+  .header-brand .tagline {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    border-left: 2px solid var(--gray-600);
+    padding-left: 12px;
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+  }
+
+  .header-meta .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #00ff41;
+    margin-right: 6px;
+    animation: blink 2s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .header-badge {
+    border: 1px solid var(--gray-600);
+    padding: 3px 10px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+  }
+
+  aside {
+    grid-area: sidebar;
+    border-right: var(--border);
+    overflow-y: auto;
+    background: var(--white);
+  }
+
+  .sidebar-section-label {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 18px 8px;
+    color: var(--gray-400);
+    border-bottom: var(--border-thin);
+    background: var(--gray-100);
+  }
+
+  .category-list {
+    list-style: none;
+  }
+
+  .category-item {
+    border-bottom: var(--border-thin);
+  }
+
+  .category-item a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    text-decoration: none;
+    color: var(--black);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.05s;
+    cursor: pointer;
+  }
+
+  .category-item a:hover {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .category-item.active a {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .category-item.active a .cat-count {
+    background: var(--white);
+    color: var(--black);
+  }
+
+  .cat-count {
+    font-size: 9px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border: 1.5px solid currentColor;
+    min-width: 26px;
+    text-align: center;
+    letter-spacing: 0;
+  }
+
+  .cat-icon {
+    margin-right: 8px;
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  .sidebar-divider {
+    height: 4px;
+    background: var(--black);
+    margin: 10px 0;
+  }
+
+  .sidebar-stat-block {
+    padding: 14px 18px;
+    border-bottom: var(--border-thin);
+    background: var(--gray-100);
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 0;
+  }
+
+  .stat-row .stat-val {
+    font-weight: 900;
+    font-size: 14px;
+  }
+
+  .template-list-pane {
+    grid-area: list;
+    border-right: var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--white);
+  }
+
+  .pane-header {
+    padding: 0;
+    border-bottom: var(--border);
+    flex-shrink: 0;
+  }
+
+  .pane-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: var(--border-thin);
+    background: var(--gray-100);
+  }
+
+  .pane-title {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .pane-count {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gray-400);
+    text-transform: uppercase;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    border-bottom: var(--border-thin);
+  }
+
+  .search-bar label {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 0 12px;
+    color: var(--gray-400);
+    white-space: nowrap;
+    border-right: var(--border-thin);
+    height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 0 14px;
+    height: 40px;
+    background: var(--white);
+    color: var(--black);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .search-bar input::placeholder {
+    color: var(--gray-400);
+  }
+
+  .tab-toggle {
+    display: flex;
+    border-bottom: var(--border-thin);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    font-family: var(--font);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gray-100);
+    color: var(--gray-400);
+    border: none;
+    border-right: var(--border-thin);
+    cursor: pointer;
+    transition: background 0.05s, color 0.05s;
+  }
+
+  .tab-btn:last-child {
+    border-right: none;
+  }
+
+  .tab-btn.active {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .tab-btn:hover:not(.active) {
+    background: var(--gray-200);
+    color: var(--black);
+  }
+
+  .template-scroll {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .template-item {
+    border-bottom: var(--border-thin);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.05s;
+    position: relative;
+  }
+
+  .template-item:hover {
+    background: var(--gray-100);
+  }
+
+  .template-item.selected {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .template-item.selected .template-tag,
+  .template-item.selected .template-meta {
+    color: var(--gray-400) !important;
+    border-color: var(--gray-600) !important;
+  }
+
+  .template-item.selected .template-name {
+    color: var(--white);
+  }
+
+  .template-name {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+    line-height: 1.3;
+  }
+
+  .template-desc {
+    font-size: 10px;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .template-item.selected .template-desc {
+    color: var(--gray-400);
+  }
+
+  .template-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .template-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .template-tag {
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: 1.5px solid var(--gray-200);
+    padding: 1px 5px;
+    color: var(--gray-400);
+  }
+
+  .template-meta {
+    font-size: 9px;
+    color: var(--gray-400);
+    white-space: nowrap;
+    letter-spacing: 1px;
+  }
+
+  .detail-pane {
+    grid-area: panel;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--white);
+  }
+
+  .detail-pane-header {
+    padding: 12px 24px;
+    border-bottom: var(--border);
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .detail-pane-title {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    font-family: var(--font);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 2px solid var(--black);
+    background: var(--white);
+    color: var(--black);
+    cursor: pointer;
+    transition: background 0.05s, color 0.05s;
+  }
+
+  .btn:hover {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .btn-primary {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .btn-primary:hover {
+    background: var(--gray-600);
+  }
+
+  .detail-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+  }
+
+  .empty-state-cross {
+    width: 70px;
+    height: 70px;
+    position: relative;
+    margin-bottom: 28px;
+  }
+
+  .empty-state-cross::before,
+  .empty-state-cross::after {
+    content: '';
+    position: absolute;
+    background: var(--gray-200);
+  }
+
+  .empty-state-cross::before {
+    width: 4px;
+    height: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .empty-state-cross::after {
+    height: 4px;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .empty-label {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+  }
+
+  .empty-sub {
+    font-size: 10px;
+    color: var(--gray-400);
+    letter-spacing: 1px;
+    max-width: 300px;
+    line-height: 1.7;
+    text-transform: uppercase;
+  }
+
+  .empty-state-border {
+    border: 4px solid var(--gray-200);
+    padding: 36px 56px;
+  }
+
+  .template-detail {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .template-detail.visible {
+    display: flex;
+  }
+
+  .detail-meta-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: var(--border);
+    flex-shrink: 0;
+  }
+
+  .meta-cell {
+    padding: 12px 18px;
+    border-right: var(--border-thin);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-cell:last-child {
+    border-right: none;
+  }
+
+  .meta-label {
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+  }
+
+  .meta-value {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .detail-prompt-area {
+    flex: 1;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .field-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field-label {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+  }
+
+  .field-label::after {
+    content: ' ___';
+    color: var(--gray-200);
+  }
+
+  .prompt-text {
+    font-family: var(--font);
+    font-size: 12px;
+    line-height: 1.7;
+    background: var(--gray-100);
+    border: 2px solid var(--black);
+    padding: 18px;
+    white-space: pre-wrap;
+    color: var(--black);
+  }
+
+  .prompt-textarea {
+    font-family: var(--font);
+    font-size: 12px;
+    line-height: 1.7;
+    background: var(--white);
+    border: 2px solid var(--black);
+    padding: 18px;
+    color: var(--black);
+    resize: vertical;
+    outline: none;
+    min-height: 120px;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .prompt-textarea:focus {
+    border-color: var(--black);
+    box-shadow: 6px 6px 0 var(--black);
+  }
+
+  .prompt-textarea::placeholder {
+    color: var(--gray-400);
+  }
+
+  .detail-footer {
+    border-top: var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--gray-100);
+  }
+
+  .footer-hint {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .custom-view {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .custom-view.visible {
+    display: flex;
+  }
+
+  .custom-header-block {
+    border-bottom: var(--border);
+    padding: 20px 28px;
+    background: var(--gray-100);
+    flex-shrink: 0;
+  }
+
+  .custom-header-block h2 {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .custom-header-block p {
+    font-size: 10px;
+    color: var(--gray-400);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .custom-body {
+    flex: 1;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-left: 1px solid var(--gray-200);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--black);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-600);
+  }
+
+  ::selection {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .ruler {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow: hidden;
+    height: 12px;
+    flex-shrink: 0;
+    border-bottom: var(--border-thin);
+  }
+
+  .ruler-tick {
+    width: 24px;
+    height: 100%;
+    border-right: 1px solid var(--gray-200);
+    flex-shrink: 0;
+  }
+
+  .ruler-tick:nth-child(5n) {
+    border-right-color: var(--gray-400);
+    background: var(--gray-100);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="header-brand">
+      <div class="logo">Jourdan<span>Labs</span></div>
+      <div class="tagline">Prompt Library // v2.4.1</div>
+    </div>
+    <div class="header-meta">
+      <span><span class="status-dot"></span>CONNECTED</span>
+      <span class="header-badge">GPT-4o</span>
+      <span class="header-badge">ENTERPRISE</span>
+      <span>USER: SOK_PYEON</span>
+    </div>
+  </header>
+
+  <aside>
+    <div class="sidebar-section-label">// CATEGORIES</div>
+    <ul class="category-list">
+      <li class="category-item active">
+        <a href="#" onclick="filterByCategory('all')">
+          <span><span class="cat-icon">▶</span>ALL TEMPLATES</span>
+          <span class="cat-count">47</span>
+        </a>
+      </li>
+      <li class="category-item">
+        <a href="#" onclick="filterByCategory('code')">
+          <span><span class="cat-icon">▶</span>CODE &amp; DEV</span>
+          <span class="cat-count">12</span>
+        </a>
+      </li>
+      <li class="category-item">
+        <a href="#" onclick="filterByCategory('writing')">
+          <span><span class="cat-icon">▶</span>WRITING</span>
+          <span class="cat-count">9</span>
+        </a>
+      </li>
+      <li class="category-item">
+        <a href="#" onclick="filterByCategory('analysis')">
+          <span><span class="cat-icon">▶</span>ANALYSIS</span>
+          <span class="cat-count">8</span>
+        </a>
+      </li>
+      <li class="category-item">
+        <a href="#" onclick="filterByCategory('marketing')">
+          <span><span class="cat-icon">▶</span>MARKETING</span>
+          <span class="cat-count">7</span>
+        </a>
+      </li>
+      <li class="category-item">
+        <a href="#" onclick="filterByCategory('data')">
+          <span><span class="cat-icon">▶</span>DATA &amp; REPORTS</span>
+          <span class="cat-count">6</span>
+        </a>
+      </li>
+      <li class="category-item">
+        <a href="#" onclick="filterByCategory('hr')">
+          <span><span class="cat-icon">▶</span>HR &amp; LEGAL</span>
+          <span class="cat-count">5</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">// WORKSPACE STATS</div>
+    <div class="sidebar-stat-block">
+      <div class="stat-row">
+        <span>TOTAL PROMPTS</span>
+        <span class="stat-val">47</span>
+      </div>
+      <div class="stat-row">
+        <span>RUNS TODAY</span>
+        <span class="stat-val">138</span>
+      </div>
+      <div class="stat-row">
+        <span>TEAM MEMBERS</span>
+        <span class="stat-val">12</span>
+      </div>
+      <div class="stat-row">
+        <span>SAVED TOKENS</span>
+        <span class="stat-val">92K</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">// RECENT</div>
+    <ul class="category-list">
+      <li class="category-item"><a href="#"><span><span class="cat-icon">↩</span>DEBUG ASSISTANT</span></a></li>
+      <li class="category-item"><a href="#"><span><span class="cat-icon">↩</span>BLOG DRAFT GEN</span></a></li>
+      <li class="category-item"><a href="#"><span><span class="cat-icon">↩</span>SQL OPTIMIZER</span></a></li>
+    </ul>
+  </aside>
+
+  <div class="template-list-pane">
+    <div class="pane-header">
+      <div class="pane-title-bar">
+        <span class="pane-title">// TEMPLATES</span>
+        <span class="pane-count" id="list-count">47 ENTRIES</span>
+      </div>
+
+      <div class="search-bar">
+        <label>SEARCH</label>
+        <input type="text" placeholder="FILTER BY NAME OR TAG..." id="search-input" oninput="filterTemplates()" />
+      </div>
+
+      <div class="tab-toggle">
+        <button class="tab-btn active" id="tab-library" onclick="switchTab('library')">▶ LIBRARY</button>
+        <button class="tab-btn" id="tab-custom" onclick="switchTab('custom')">+ CUSTOM PROMPT</button>
+      </div>
+    </div>
+
+    <div class="template-scroll" id="template-scroll">
+      <!-- Templates rendered by JS -->
+    </div>
+  </div>
+
+  <div class="detail-pane">
+    <div class="detail-pane-header">
+      <span class="detail-pane-title" id="panel-title">// PROMPT VIEWER</span>
+      <div class="detail-actions">
+        <button class="btn">[ COPY ]</button>
+        <button class="btn">[ EXPORT ]</button>
+        <button class="btn btn-primary">[ RUN → ]</button>
+      </div>
+    </div>
+
+    <div class="detail-body" id="empty-state">
+      <div class="empty-state">
+        <div class="empty-state-border">
+          <div class="empty-state-cross"></div>
+          <div class="empty-label">SELECT A TEMPLATE</div>
+          <div class="empty-sub">CHOOSE A TEMPLATE FROM THE LIST TO VIEW AND EDIT ITS PROMPT CONTENT.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="template-detail" id="template-detail">
+      <div class="detail-meta-bar">
+        <div class="meta-cell">
+          <span class="meta-label">CATEGORY</span>
+          <span class="meta-value" id="meta-category">—</span>
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">AUTHOR</span>
+          <span class="meta-value" id="meta-author">—</span>
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">RUNS</span>
+          <span class="meta-value" id="meta-runs">—</span>
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">MODIFIED</span>
+          <span class="meta-value" id="meta-date">—</span>
+        </div>
+      </div>
+
+      <div class="ruler">
+        <div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div>
+        <div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div>
+        <div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div>
+        <div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div>
+        <div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div><div class="ruler-tick"></div>
+      </div>
+
+      <div class="detail-prompt-area">
+        <div class="field-block">
+          <div class="field-label">SYSTEM PROMPT</div>
+          <pre class="prompt-text" id="detail-system"></pre>
+        </div>
+        <div class="field-block">
+          <div class="field-label">USER INPUT SCAFFOLD</div>
+          <pre class="prompt-text" id="detail-user"></pre>
+        </div>
+        <div class="field-block">
+          <div class="field-label">VARIABLES (OVERRIDE)</div>
+          <textarea class="prompt-textarea" rows="3" placeholder="E.G.  CONTEXT=ENTERPRISE USE CASE  /  TONE=FORMAL  /  LENGTH=SHORT"></textarea>
+        </div>
+      </div>
+
+      <div class="detail-footer">
+        <span class="footer-hint">LAST RUN: 14 MIN AGO // TOKENS: ~340</span>
+        <div class="footer-actions">
+          <button class="btn">[ EDIT ]</button>
+          <button class="btn btn-primary">[ RUN → ]</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="custom-view" id="custom-view">
+      <div class="custom-header-block">
+        <h2>// CUSTOM PROMPT</h2>
+        <p>WRITE A RAW PROMPT. NO TEMPLATE. NO GUARDRAILS.</p>
+      </div>
+      <div class="custom-body">
+        <div class="field-block">
+          <div class="field-label">SYSTEM ROLE</div>
+          <textarea class="prompt-textarea" rows="4" placeholder="YOU ARE A..."></textarea>
+        </div>
+        <div class="field-block">
+          <div class="field-label">YOUR PROMPT</div>
+          <textarea class="prompt-textarea" rows="10" placeholder="ENTER YOUR PROMPT HERE..."></textarea>
+        </div>
+        <div class="field-block">
+          <div class="field-label">MODEL PARAMS</div>
+          <textarea class="prompt-textarea" rows="2" placeholder="TEMP=0.7  /  MAX_TOKENS=1024  /  TOP_P=1.0"></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:10px;">
+          <button class="btn">[ CLEAR ]</button>
+          <button class="btn btn-primary">[ RUN → ]</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const templates = [
+  { name: "DEBUG ASSISTANT", desc: "ANALYZE ERROR MESSAGES AND PROVIDE STEP-BY-Step FIXES", category: "CODE", tags: ["DEBUG", "ERRORS"], runs: "2.4K", author: "SYSTEM", date: "2024-01-15" },
+  { name: "SQL OPTIMIZER", desc: "ANALYZE QUERIES AND SUGGEST PERFORMANCE IMPROVEMENTS", category: "CODE", tags: ["SQL", "PERF"], runs: "1.8K", author: "SYSTEM", date: "2024-01-12" },
+  { name: "BLOG DRAFT GEN", desc: "GENERATE SEO-OPTIMIZED BLOG POSTS FROM TOPICS", category: "WRITING", tags: ["SEO", "BLOG"], runs: "3.1K", author: "SYSTEM", date: "2024-01-10" },
+  { name: "CODE REVIEWER", desc: "PROVIDE COMPREHENSIVE CODE REVIEW WITH SUGGESTIONS", category: "CODE", tags: ["REVIEW", "QA"], runs: "1.2K", author: "SYSTEM", date: "2024-01-08" },
+  { name: "DATA ANALYZER", desc: "INTERPRET DATASETS AND GENERATE INSIGHTS", category: "ANALYSIS", tags: ["DATA", "INSIGHTS"], runs: "890", author: "SYSTEM", date: "2024-01-05" },
+  { name: "EMAIL CAMPAIGN", desc: "CREATE HIGH-CONVERTING EMAIL SEQUENCES", category: "MARKETING", tags: ["EMAIL", "CONVERSION"], runs: "2.7K", author: "SYSTEM", date: "2024-01-03" },
+  { name: "CONTRACT DRAFTER", desc: "GENERATE LEGAL CONTRACTS FROM TEMPLATES", category: "HR", tags: ["LEGAL", "CONTRACT"], runs: "456", author: "SYSTEM", date: "2023-12-28" },
+  { name: "API DOCUMENTOR", desc: "AUTO-GENERATE API DOCUMENTATION FROM CODE", category: "CODE", tags: ["API", "DOCS"], runs: "780", author: "SYSTEM", date: "2023-12-25" },
+  { name: "SOCIAL STRATEGIST", desc: "PLAN SOCIAL MEDIA CONTENT CALENDARS", category: "MARKETING", tags: ["SOCIAL", "STRATEGY"], runs: "1.5K", author: "SYSTEM", date: "2023-12-20" },
+  { name: "REPORT SUMMARIZER", desc: "EXTRACT KEY FINDINGS FROM LONG REPORTS", category: "DATA", tags: ["SUMMARY", "REPORTS"], runs: "1.1K", author: "SYSTEM", date: "2023-12-18" },
+  { name: "JOB DESC WRITER", desc: "CREATE COMPELLING JOB DESCRIPTIONS", category: "HR", tags: ["HIRING", "JOBS"], runs: "620", author: "SYSTEM", date: "2023-12-15" },
+  { name: "COMPETITOR AUDIT", desc: "ANALYZE COMPETITOR POSITIONING AND GAPS", category: "ANALYSIS", tags: ["COMPETITION", "STRATEGY"], runs: "540", author: "SYSTEM", date: "2023-12-10" },
+];
+
+const systemPrompts = {
+  "DEBUG ASSISTANT": "YOU ARE AN EXPERT SOFTWARE DEBUGGER. ANALYZE ERROR MESSAGES, STACK TRACES, AND CODE TO IDENTIFY ROOT CAUSES. PROVIDE CLEAR, STEP-BY-STEP SOLUTIONS PRIORITIZING SAFE FIXES.",
+  "SQL OPTIMIZER": "YOU ARE A DATABASE PERFORMANCE EXPERT. ANALYZE SQL QUERIES FOR PERFORMANCE BOTTLENECKS, INDEX OPPORTUNITIES, AND QUERY OPTIMIZATION. EXPLAIN CHANGES WITH THEIR IMPACT.",
+  "BLOG DRAFT GEN": "YOU ARE A SEO SPECIALIST AND CONTENT WRITER. CREATE COMPELLING, SEARCH-OPTIMIZED BLOG POSTS THAT BALANCE READABILITY WITH KEYWORD TARGETING. FOLLOW BEST PRACTICES FOR HEADINGS, META, AND STRUCTURE.",
+  "CODE REVIEWER": "YOU ARE A SENIOR SOFTWARE ENGINEER. REVIEW CODE FOR BUGS, SECURITY VULNERABILITIES, PERFORMANCE ISSUES, AND BEST PRACTICES. PROVIDE ACTIONABLE FEEDBACK WITH CODE EXAMPLES.",
+  "DATA ANALYZER": "YOU ARE A DATA SCIENTIST. ANALYZE DATASETS TO FIND PATTERNS, ANOMALIES, AND ACTIONABLE INSIGHTS. PRESENT FINDINGS WITH CLEAR VISUALIZATIONS AND RECOMMENDATIONS.",
+  "EMAIL CAMPAIGN": "YOU ARE A DIRECT RESPONSE COPYWRITER. CREATE EMAIL SEQUENCES THAT DRIVE OPENS, CLICKS, AND CONVERSIONS. FOLLOW PROVEN PSYCHOLOGICAL TRIGGERS AND BEST PRACTICES.",
+  "CONTRACT DRAFTER": "YOU ARE A LEGAL PROFESSIONAL. GENERATE LEGALLY SOUND CONTRACT DRAFTS BASED ON PROVIDED TEMPLATES AND PARAMETERS. INCLUDE PROPER CLAUSES AND PROTECTIONS.",
+  "API DOCUMENTOR": "YOU ARE A TECHNICAL WRITER. GENERATE CLEAR, COMPREHENSIVE API DOCUMENTATION FROM CODE. INCLUDE ENDPOINTS, PARAMETERS, REQUEST/RESPONSE EXAMPLES, AND ERROR CODES.",
+  "SOCIAL STRATEGIST": "YOU ARE A SOCIAL MEDIA STRATEGIST. CREATE CONTENT CALENDARS THAT ALIGN WITH BUSINESS GOALS, AUDIENCE BEHAVIOR, AND PLATFORM BEST PRACTICES.",
+  "REPORT SUMMARIZER": "YOU ARE AN ANALYTICAL WRITER. EXTRACT KEY FINDINGS, RECOMMENDATIONS, AND ACTION ITEMS FROM LONG REPORTS. PRESENT IN A CONCISE, SCANNABLE FORMAT.",
+  "JOB DESC WRITER": "YOU ARE AN HR SPECIALIST. WRITE COMPELLING JOB DESCRIPTIONS THAT ATTRACT QUALIFIED CANDIDATES. BALANCE REQUIREMENTS WITH COMPANY CULTURE AND GROWTH OPPORTUNITIES.",
+  "COMPETITOR AUDIT": "YOU ARE A STRATEGIC ANALYST. ANALYZE COMPETITOR POSITIONING, MARKET SHARE, AND STRENGTHS/WEAKNESSES. IDENTIFY MARKET GAPS AND OPPORTUNITIES.",
+};
+
+const userScaffolds = {
+  "DEBUG ASSISTANT": "ERROR MESSAGE:\n{{ERROR_MESSAGE}}\n\nSTACK TRACE:\n{{STACK_TRACE}}\n\nRELEVANT CODE:\n{{CODE_SNIPPET}}\n\nANALYZE THIS ERROR AND PROVIDE A STEP-BY-STEP FIX.",
+  "SQL OPTIMIZER": "DATABASE TYPE: {{DB_TYPE}}\n\nQUERY TO OPTIMIZE:\n{{SQL_QUERY}}\n\nEXPLAIN THE CURRENT QUERY PLAN AND PROVIDE OPTIMIZED VERSION.",
+  "BLOG DRAFT GEN": "TOPIC: {{TOPIC}}\nTARGET AUDIENCE: {{AUDIENCE}}\nKEYWORDS: {{KEYWORDS}}\nTONE: {{TONE}}\nWORD COUNT: {{WORD_COUNT}}",
+  "CODE REVIEWER": "LANGUAGE: {{LANGUAGE}}\nCODE:\n{{CODE}}\n\nFOCUS AREAS: {{FOCUS_AREAS}}",
+  "DATA ANALYZER": "DATASET OVERVIEW:\n{{DATASET_DESC}}\n\nDATA SAMPLE:\n{{DATA_SAMPLE}}\n\nQUESTIONS TO ANSWER:\n{{QUESTIONS}}",
+};
+
+let currentTab = 'library';
+let selectedTemplate = null;
+
+function renderTemplates(filter = '', category = 'all') {
+  const container = document.getElementById('template-scroll');
+  const filtered = templates.filter(t => {
+    const matchesSearch = filter === '' || 
+      t.name.toLowerCase().includes(filter.toLowerCase()) ||
+      t.tags.some(tag => tag.toLowerCase().includes(filter.toLowerCase()));
+    const matchesCategory = category === 'all' || t.category.toLowerCase() === category;
+    return matchesSearch && matchesCategory;
+  });
+  
+  document.getElementById('list-count').textContent = filtered.length + ' ENTRIES';
+  
+  container.innerHTML = filtered.map((t, i) => `
+    <div class="template-item" onclick="selectTemplate(${templates.indexOf(t)})">
+      <div class="template-name">${t.name}</div>
+      <div class="template-desc">${t.desc}</div>
+      <div class="template-footer">
+        <div class="template-tags">
+          ${t.tags.map(tag => `<span class="template-tag">${tag}</span>`).join('')}
+        </div>
+        <span class="template-meta">${t.runs}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectTemplate(index) {
+  selectedTemplate = templates[index];
+  document.querySelectorAll('.template-item').forEach((el, i) => {
+    el.classList.toggle('selected', i === index);
+  });
+  
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('template-detail').classList.add('visible');
+  document.getElementById('custom-view').classList.remove('visible');
+  document.getElementById('panel-title').textContent = '// ' + selectedTemplate.name;
+  
+  document.getElementById('meta-category').textContent = selectedTemplate.category;
+  document.getElementById('meta-author').textContent = selectedTemplate.author;
+  document.getElementById('meta-runs').textContent = selectedTemplate.runs;
+  document.getElementById('meta-date').textContent = selectedTemplate.date;
+  document.getElementById('detail-system').textContent = systemPrompts[selectedTemplate.name] || 'SYSTEM PROMPT NOT DEFINED';
+  document.getElementById('detail-user').textContent = userScaffolds[selectedTemplate.name] || 'USER SCAFFOLD NOT DEFINED';
+}
+
+function filterTemplates() {
+  const search = document.getElementById('search-input').value;
+  renderTemplates(search);
+}
+
+function filterByCategory(cat) {
+  document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+  event.target.closest('.category-item').classList.add('active');
+  renderTemplates(document.getElementById('search-input').value, cat);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  
+  if (tab === 'library') {
+    document.getElementById('empty-state').style.display = selectedTemplate ? 'none' : 'flex';
+    document.getElementById('template-detail').classList.toggle('visible', !!selectedTemplate);
+    document.getElementById('custom-view').classList.remove('visible');
+  } else if (tab === 'custom') {
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('template-detail').classList.remove('visible');
+    document.getElementById('custom-view').classList.add('visible');
+    document.getElementById('panel-title').textContent = '// CUSTOM PROMPT';
+  }
+}
+
+renderTemplates();
+</script>
+
+</body>
+</html>
