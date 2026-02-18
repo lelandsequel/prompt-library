@@ -108,10 +108,10 @@ examples:
       requirements: CRUD operations, authentication, authorization
     expected_output: Should include RESTful endpoints, JSON schemas, auth flow
 
-usage: Use when designing new APIs or improvings:
-  - existing ones.
+usage: Use when designing new APIs or improving existing ones.
 
-context API design
+contexts:
+  - API design
   - Architecture planning
   - API documentation
 

@@ -3,8 +3,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "Prompt Library | JourdanLabs",
-  description: "Enterprise prompt engineering tools for developers",
+  title: "Prompt OS | JourdanLabs × C&L Strategy",
+  description: "Enterprise prompt engineering platform for technical teams — built by JourdanLabs in partnership with C&L Strategy.",
 };
 
 export default function RootLayout({

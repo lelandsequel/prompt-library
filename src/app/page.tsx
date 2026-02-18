@@ -44,6 +44,27 @@ function ThemeToggle({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
   );
 }
 
+// Footer component with branding
+function Footer({ theme }: { theme: Theme }) {
+  const footerStyles: Record<Theme, string> = {
+    brutalist: 'brutalist-footer',
+    minimal: 'minimal-footer',
+    terminal: 'terminal-footer-bar'
+  };
+
+  return (
+    <footer className={footerStyles[theme]}>
+      <div className="footer-content">
+        <span className="footer-brand">Prompt OS</span>
+        <span className="footer-sep">|</span>
+        <a href="https://jourdanlabs.com" target="_blank" rel="noopener noreferrer" className="footer-link">JourdanLabs</a>
+        <span className="footer-sep">×</span>
+        <a href="https://cl-strategy.com" target="_blank" rel="noopener noreferrer" className="footer-link">C&L Strategy</a>
+      </div>
+    </footer>
+  );
+}
+
 // ============================================
 // BRUTALIST THEME COMPONENTS
 // ============================================
@@ -51,10 +72,10 @@ function BrutalistHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
   return (
     <header className="brutalist-header">
       <div className="brutalist-title">
-        <div className="brutalist-logo">PL</div>
+        <div className="brutalist-logo">OS</div>
         <div>
-          <h1>PROMPT_LIBRARY</h1>
-          <p>JOUDANLABS_v1.0</p>
+          <h1>PROMPT_OS</h1>
+          <p>JOURDANLABS_×_C&L_STRATEGY</p>
         </div>
       </div>
       <ThemeToggle theme={theme} setTheme={setTheme} />
@@ -143,8 +164,8 @@ function MinimalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
           <Sparkles className="w-6 h-6" />
         </div>
         <div>
-          <h1>Prompt Library</h1>
-          <p>JourdanLabs</p>
+          <h1>Prompt OS</h1>
+          <p>JourdanLabs × C&amp;L Strategy</p>
         </div>
       </div>
       <ThemeToggle theme={theme} setTheme={setTheme} />
@@ -232,7 +253,7 @@ function TerminalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
     <header className="terminal-header">
       <div className="terminal-title">
         <TerminalIcon className="w-5 h-5" />
-        <span>Prompt Library — ~</span>
+        <span>Prompt OS — JourdanLabs × C&L Strategy — ~</span>
       </div>
       <ThemeToggle theme={theme} setTheme={setTheme} />
       <div className="terminal-tabs">
@@ -692,6 +713,7 @@ export default function PromptLibrary() {
           renderCustomMode()
         )}
       </main>
+      <Footer theme={theme} />
     </div>
   );
 }

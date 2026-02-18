@@ -1,10 +1,14 @@
-# PROMPT_GUIDELINES.md
+# Prompt OS — Governance Guidelines
+### JourdanLabs × C&L Strategy
 
-# JourdanLabs Prompt Library - Governance Guidelines
+> **Enterprise Prompt Engineering Platform**
+> Built by [JourdanLabs](https://jourdanlabs.com) in partnership with [C&L Strategy](https://cl-strategy.com)
+
+---
 
 ## Overview
 
-This document outlines the governance, contribution, and quality standards for the JourdanLabs Prompt Library (PromptOS).
+This document outlines the governance, contribution, and quality standards for **Prompt OS** — the JourdanLabs × C&L Strategy enterprise prompt engineering platform.
 
 ---
 
@@ -181,7 +185,12 @@ Types:
 
 - **Issues**: GitHub Issues
 - **Discussion**: GitHub Discussions
-- **Email**: jourdanlabs@example.com
+- **JourdanLabs**: [jourdanlabs.com](https://jourdanlabs.com)
+- **C&L Strategy**: [cl-strategy.com](https://cl-strategy.com)
+
+---
+
+*Prompt OS is an enterprise product developed by JourdanLabs in partnership with C&L Strategy.*
 
 ---
 

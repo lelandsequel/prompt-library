@@ -1,6 +1,13 @@
-# JourdanLabs Prompt Library
+# Prompt OS
+### JourdanLabs x C&L Strategy
+
+> **Enterprise Prompt Engineering Platform** — Purpose-built for technical teams who demand precision, consistency, and scalability in their AI workflows.
 
 A Next.js-based web application for generating optimized prompts for various Large Language Models (LLMs). The library provides pre-built templates for common development tasks and allows users to customize prompts for their preferred AI assistant.
+
+---
+
+**Built by [JourdanLabs](https://jourdanlabs.com) in partnership with [C&L Strategy](https://cl-strategy.com)**
 
 ## Table of Contents
 
@@ -379,10 +386,19 @@ prompt-library/
 
 ## License
 
-Private - JourdanLabs
+Private — JourdanLabs x C&L Strategy
 
 ---
 
 ## Support
 
-For issues or questions, please contact the JourdanLabs team.
+For issues or questions, please contact the team:
+
+- **JourdanLabs**: [jourdanlabs.com](https://jourdanlabs.com)
+- **C&L Strategy**: [cl-strategy.com](https://cl-strategy.com)
+
+---
+
+<div align="center">
+  <strong>Prompt OS</strong> · Built by <a href="https://jourdanlabs.com">JourdanLabs</a> × <a href="https://cl-strategy.com">C&L Strategy</a>
+</div>

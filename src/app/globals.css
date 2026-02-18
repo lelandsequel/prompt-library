@@ -1294,3 +1294,114 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* ============================================ */
+/* FOOTER STYLES */
+/* ============================================ */
+
+.minimal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  text-align: center;
+}
+
+.minimal-footer .footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.minimal-footer .footer-brand {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.minimal-footer .footer-sep {
+  color: var(--text-muted);
+}
+
+.minimal-footer .footer-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.minimal-footer .footer-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.brutalist-footer {
+  padding: 12px 20px;
+  border-top: 3px solid var(--border-color);
+  background: var(--bg-secondary);
+  text-align: center;
+}
+
+.brutalist-footer .footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.brutalist-footer .footer-brand {
+  color: var(--text-primary);
+}
+
+.brutalist-footer .footer-sep {
+  color: var(--text-muted);
+}
+
+.brutalist-footer .footer-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.brutalist-footer .footer-link:hover {
+  opacity: 0.7;
+  text-decoration: underline;
+}
+
+.terminal-footer-bar {
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+.terminal-footer-bar .footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.terminal-footer-bar .footer-brand {
+  color: var(--accent);
+}
+
+.terminal-footer-bar .footer-sep {
+  color: var(--text-muted);
+}
+
+.terminal-footer-bar .footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.terminal-footer-bar .footer-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
