@@ -32,7 +32,6 @@ inputs:
       - Code Comments
       - Architecture Doc
       - User Guide
-      - README
 
   - name: language
     label: Programming Language
@@ -96,6 +95,7 @@ examples:
   - name: api_docs
     inputs:
       doc_type: API Documentation
+      overview: TypeScript function for adding two numbers
       language: TypeScript
       code_snippet: "function add(a: number, b: number): number { return a + b; }"
     expected_output: Should include parameter types, return type, examples

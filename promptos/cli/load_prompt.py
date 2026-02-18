@@ -206,6 +206,26 @@ def main():
         # Handle list commands
         if args.list:
             prompts = list_prompts()
+            
+            # Apply model filter if specified
+            if args.model:
+                registry = load_registry()
+                filtered = []
+                for p in prompts:
+                    # Find the full prompt data to check compatibility
+                    for reg_prompt in registry.get('prompts', []):
+                        if reg_prompt['id'] == p['id']:
+                            prompt_path = BASE_DIR / reg_prompt['file']
+                            try:
+                                prompt_data = load_prompt_file(prompt_path)
+                                compatibility = prompt_data.get('model_compatibility', [])
+                                if args.model in compatibility or '*' in compatibility:
+                                    filtered.append(p)
+                            except FileNotFoundError:
+                                pass
+                            break
+                prompts = filtered
+            
             if args.json:
                 print(json.dumps(prompts, indent=2))
             else:

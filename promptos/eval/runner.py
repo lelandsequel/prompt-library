@@ -57,7 +57,17 @@ class EvalRunner:
         return None
     
     def run_test_case(self, prompt: dict, test_case: dict) -> EvalResult:
-        """Run a single test case against a prompt."""
+        """Run a single test case against a prompt.
+        
+        NOTE: This evaluation method tests PROMPT TEMPLATE COMPLETENESS, not LLM output.
+        It checks whether the expected content exists in the rendered prompt template
+        after test inputs are injected. This validates that the prompt itself contains
+        the necessary instructions/content to produce expected outputs - but does NOT
+        verify actual LLM behavior.
+        
+        For LLM-based evaluation, this runner would need to actually call an LLM API
+        and compare the response against expected output.
+        """
         result = EvalResult(
             prompt.get('id', 'unknown'),
             test_case.get('name', 'unnamed test')
