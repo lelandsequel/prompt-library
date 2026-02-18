@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
+import * as crypto from 'crypto';
 
 // ============================================
 // Types
@@ -16,8 +17,10 @@ interface PromptMetadata {
   author?: string;
   tags?: string[];
   inputs?: InputDefinition[];
+  outputs?: OutputDefinition[];
   role?: string;
   file: string;
+  prompt?: string;
 }
 
 interface InputDefinition {
@@ -29,6 +32,12 @@ interface InputDefinition {
   placeholder?: string;
 }
 
+interface OutputDefinition {
+  name: string;
+  type: string;
+  description?: string;
+}
+
 interface RegistryPrompt {
   id: string;
   name: string;
@@ -37,377 +46,358 @@ interface RegistryPrompt {
   file: string;
 }
 
-interface PromptOSManifest {
-  name: string;
-  description: string;
-  version: string;
-  publisher: string;
-  prompts: Record<string, {
-    id: string;
-    name: string;
-    description: string;
-    icon?: string;
-  }>;
-  configuration?: {
-    prompt_directory?: string;
-    registry_file?: string;
-    default_format?: string;
-  };
-}
-
 // ============================================
-// Global State
+// Output Channel
 // ============================================
 
-// Reserved for future caching
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let _promptCache: PromptMetadata[] = [];
-let manifestCache: PromptOSManifest | null = null;
-let hoverProvider: vscode.Disposable | null = null;
-let completionProvider: vscode.Disposable | null = null;
+let outputChannel: vscode.OutputChannel;
 
-// ============================================
-// Utility Functions
-// ============================================
-
-function getWorkspaceRoot(): vscode.Uri | null {
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (!workspaceFolders || workspaceFolders.length === 0) {
-    return null;
+function getOutputChannel(): vscode.OutputChannel {
+  if (!outputChannel) {
+    outputChannel = vscode.window.createOutputChannel('PromptOS');
   }
-  return workspaceFolders[0].uri;
+  return outputChannel;
 }
+
+function log(msg: string): void {
+  getOutputChannel().appendLine(`[${new Date().toISOString()}] ${msg}`);
+}
+
+// ============================================
+// Configuration
+// ============================================
 
 function getConfig() {
   const config = vscode.workspace.getConfiguration('promptos');
   return {
-    promptDirectory: config.get<string>('promptDirectory', './promptos/prompts'),
-    registryFile: config.get<string>('registryFile', './promptos/registry/index.json'),
-    manifestFile: config.get<string>('manifestFile', './promptos/ide/promptos.json'),
-    includeVariables: config.get<boolean>('includeVariables', true),
-    showMetadataOnHover: config.get<boolean>('showMetadataOnHover', true)
+    registryPath: config.get<string>('registryPath', './promptos/registry/index.json'),
+    insertMode: config.get<string>('insertMode', 'insert') as 'clipboard' | 'insert' | 'both',
+    model: config.get<string>('model', 'claude-sonnet-4-20250514'),
+    user: config.get<string>('user', ''),
+    role: config.get<string>('role', ''),
   };
 }
 
-async function loadManifest(): Promise<PromptOSManifest | null> {
-  if (manifestCache) {
-    return manifestCache;
-  }
-
-  const workspaceRoot = getWorkspaceRoot();
-  if (!workspaceRoot) {
-    return null;
-  }
-
-  const config = getConfig();
-  const manifestPath = path.join(workspaceRoot.fsPath, config.manifestFile);
-
-  try {
-    if (fs.existsSync(manifestPath)) {
-      const content = fs.readFileSync(manifestPath, 'utf-8');
-      manifestCache = JSON.parse(content);
-      return manifestCache;
-    }
-  } catch (error) {
-    console.error('Failed to load manifest:', error);
-  }
-
-  return null;
+function getWorkspaceRoot(): string | null {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) return null;
+  return folders[0].uri.fsPath;
 }
 
-async function loadRegistryPrompts(): Promise<RegistryPrompt[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  if (!workspaceRoot) {
+// ============================================
+// Registry Loading
+// ============================================
+
+let _registryCache: RegistryPrompt[] | null = null;
+let _promptCache: Map<string, PromptMetadata> = new Map();
+
+function clearCache(): void {
+  _registryCache = null;
+  _promptCache.clear();
+}
+
+function loadRegistry(): RegistryPrompt[] {
+  if (_registryCache) return _registryCache;
+
+  const wsRoot = getWorkspaceRoot();
+  if (!wsRoot) return [];
+
+  const cfg = getConfig();
+  const registryPath = path.isAbsolute(cfg.registryPath)
+    ? cfg.registryPath
+    : path.join(wsRoot, cfg.registryPath);
+
+  try {
+    const content = fs.readFileSync(registryPath, 'utf-8');
+    const reg = JSON.parse(content);
+    _registryCache = reg.prompts || [];
+    log(`Registry loaded: ${_registryCache!.length} prompts from ${registryPath}`);
+    return _registryCache!;
+  } catch (e) {
+    log(`Failed to load registry from ${registryPath}: ${e}`);
     return [];
   }
-
-  const config = getConfig();
-  const registryPath = path.join(workspaceRoot.fsPath, config.registryFile);
-
-  try {
-    if (fs.existsSync(registryPath)) {
-      const content = fs.readFileSync(registryPath, 'utf-8');
-      const registry = JSON.parse(content);
-      return registry.prompts || [];
-    }
-  } catch (error) {
-    console.error('Failed to load registry:', error);
-  }
-
-  return [];
 }
 
-async function loadPromptFromFile(filePath: string): Promise<PromptMetadata | null> {
-  const workspaceRoot = getWorkspaceRoot();
-  if (!workspaceRoot) {
+function loadPromptSpec(regEntry: RegistryPrompt): PromptMetadata | null {
+  const cached = _promptCache.get(regEntry.id);
+  if (cached) return cached;
+
+  const wsRoot = getWorkspaceRoot();
+  if (!wsRoot) return null;
+
+  // Registry path is relative to promptos base dir (one level up from registry/)
+  const baseDir = path.dirname(path.dirname(path.join(wsRoot, getConfig().registryPath)));
+  const filePath = path.join(baseDir, regEntry.file);
+
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const spec = yaml.load(content) as Record<string, unknown>;
+
+    const meta: PromptMetadata = {
+      id: spec.id as string || regEntry.id,
+      name: spec.name as string || regEntry.name,
+      description: spec.description as string || '',
+      category: spec.category as string || regEntry.category,
+      version: spec.version as string || regEntry.version,
+      author: spec.author as string | undefined,
+      tags: spec.tags as string[] | undefined,
+      inputs: spec.inputs as InputDefinition[] | undefined,
+      outputs: spec.outputs as OutputDefinition[] | undefined,
+      role: spec.role as string | undefined,
+      file: regEntry.file,
+      prompt: spec.prompt as string | undefined
+    };
+
+    _promptCache.set(regEntry.id, meta);
+    return meta;
+  } catch (e) {
+    log(`Failed to load prompt ${regEntry.id}: ${e}`);
     return null;
   }
-
-  const fullPath = path.join(workspaceRoot.fsPath, filePath);
-
-  try {
-    if (fs.existsSync(fullPath)) {
-      const content = fs.readFileSync(fullPath, 'utf-8');
-      const promptData = yaml.load(content) as Record<string, unknown>;
-      
-      return {
-        id: promptData.id as string,
-        name: promptData.name as string,
-        description: promptData.description as string,
-        category: promptData.category as string,
-        version: promptData.version as string,
-        author: promptData.author as string | undefined,
-        tags: promptData.tags as string[] | undefined,
-        inputs: promptData.inputs as InputDefinition[] | undefined,
-        role: promptData.role as string | undefined,
-        file: filePath
-      };
-    }
-  } catch (error) {
-    console.error(`Failed to load prompt from ${filePath}:`, error);
-  }
-
-  return null;
 }
 
-async function loadAllPrompts(): Promise<PromptMetadata[]> {
-  const registryPrompts = await loadRegistryPrompts();
+function loadAllPrompts(): PromptMetadata[] {
+  const registry = loadRegistry();
   const prompts: PromptMetadata[] = [];
-
-  for (const regPrompt of registryPrompts) {
-    const prompt = await loadPromptFromFile(regPrompt.file);
-    if (prompt) {
-      prompts.push(prompt);
-    }
+  for (const entry of registry) {
+    const spec = loadPromptSpec(entry);
+    if (spec) prompts.push(spec);
   }
-
   return prompts;
 }
 
-function refreshCache(): void {
-  _promptCache = [];
-  manifestCache = null;
-}
-
 // ============================================
-// Command Handlers
+// Template Rendering
 // ============================================
 
-async function insertPromptCommand(): Promise<void> {
-  const prompts = await loadAllPrompts();
-  
-  if (prompts.length === 0) {
-    vscode.window.showInformationMessage('No prompts found in the library.');
-    return;
-  }
+function renderPrompt(template: string, inputs: Record<string, string>): string {
+  let result = template;
 
-  const config = getConfig();
-
-  // Create quick pick items
-  const items = prompts.map(prompt => ({
-    label: prompt.name,
-    description: `${prompt.category} • ${prompt.id}`,
-    detail: prompt.description,
-    prompt: prompt
-  }));
-
-  const selected = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Select a prompt to insert',
-    matchOnDescription: true,
-    matchOnDetail: true
+  // {{#if var}}...{{/if}}
+  result = result.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, varName, content) => {
+    return inputs[varName] ? content : '';
   });
 
-  if (!selected) {
-    return;
+  // {{var}}
+  for (const [k, v] of Object.entries(inputs)) {
+    result = result.split(`{{${k}}}`).join(v);
   }
 
-  const prompt = selected.prompt;
-
-  // If variable injection is enabled and prompt has inputs
-  if (config.includeVariables && prompt.inputs && prompt.inputs.length > 0) {
-    const variables = await collectPromptVariables(prompt);
-    if (!variables) {
-      return; // User cancelled
-    }
-
-    const renderedPrompt = renderPromptWithVariables(prompt, variables);
-    await insertTextAtCursor(renderedPrompt);
-  } else {
-    // Insert raw prompt text
-    const workspaceRoot = getWorkspaceRoot();
-    if (workspaceRoot) {
-      const promptPath = path.join(workspaceRoot.fsPath, prompt.file);
-      try {
-        const content = fs.readFileSync(promptPath, 'utf-8');
-        const promptData = yaml.load(content) as Record<string, unknown>;
-        const promptText = promptData.prompt as string;
-        await insertTextAtCursor(promptText);
-      } catch (error) {
-        vscode.window.showErrorMessage(`Failed to load prompt: ${error}`);
-      }
-    }
-  }
+  return result;
 }
 
-async function collectPromptVariables(prompt: PromptMetadata): Promise<Record<string, string> | null> {
-  const variables: Record<string, string> = {};
-  const requiredInputs = prompt.inputs?.filter(input => input.required) || [];
+// ============================================
+// Input Collection
+// ============================================
 
-  for (const input of requiredInputs) {
+async function collectInputs(prompt: PromptMetadata): Promise<Record<string, string> | null> {
+  const inputs = prompt.inputs || [];
+  const values: Record<string, string> = {};
+
+  for (const inp of inputs) {
+    if (!inp.required && !inp.name) continue;
+
     let value: string | undefined;
 
-    if (input.type === 'select' && input.options) {
-      const selected = await vscode.window.showQuickPick(input.options, {
-        placeHolder: input.placeholder || `Select ${input.label}`
-      });
-      value = selected;
-    } else if (input.type === 'textarea') {
-      value = await vscode.window.showInputBox({
-        prompt: input.label,
-        placeHolder: input.placeholder,
-        value: ''
+    if (inp.type === 'select' && inp.options && inp.options.length > 0) {
+      value = await vscode.window.showQuickPick(inp.options, {
+        placeHolder: inp.placeholder || `Select ${inp.label}`,
+        title: `PromptOS: ${prompt.name} — ${inp.label}`
       });
     } else {
       value = await vscode.window.showInputBox({
-        prompt: input.label,
-        placeHolder: input.placeholder,
-        value: ''
+        prompt: `${inp.label}${inp.required ? ' *' : ' (optional)'}`,
+        placeHolder: inp.placeholder || '',
+        title: `PromptOS: ${prompt.name}`
       });
     }
 
     if (value === undefined) {
-      return null; // User cancelled
+      // User cancelled
+      return null;
     }
 
-    variables[input.name] = value;
-  }
-
-  return variables;
-}
-
-function renderPromptWithVariables(prompt: PromptMetadata, variables: Record<string, string>): string {
-  const workspaceRoot = getWorkspaceRoot();
-  if (!workspaceRoot) {
-    return '';
-  }
-
-  const promptPath = path.join(workspaceRoot.fsPath, prompt.file);
-  try {
-    const content = fs.readFileSync(promptPath, 'utf-8');
-    const promptData = yaml.load(content) as Record<string, unknown>;
-    let promptText = promptData.prompt as string;
-
-    // Simple variable replacement (Handlebars-like syntax)
-    for (const [key, value] of Object.entries(variables)) {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      promptText = promptText.replace(regex, value);
+    if (value !== '') {
+      values[inp.name] = value;
     }
+  }
 
-    return promptText;
-  } catch (error) {
-    return '';
+  return values;
+}
+
+// ============================================
+// Output Delivery
+// ============================================
+
+async function deliverOutput(text: string, mode: 'clipboard' | 'insert' | 'both'): Promise<void> {
+  if (mode === 'clipboard' || mode === 'both') {
+    await vscode.env.clipboard.writeText(text);
+    log('Copied to clipboard');
+  }
+
+  if (mode === 'insert' || mode === 'both') {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      await editor.edit(editBuilder => {
+        editBuilder.insert(editor.selection.start, text);
+      });
+      log('Inserted into editor');
+    } else {
+      // Open new document
+      const doc = await vscode.workspace.openTextDocument({ content: text, language: 'markdown' });
+      await vscode.window.showTextDocument(doc);
+      log('Opened in new document');
+    }
   }
 }
 
-async function insertTextAtCursor(text: string): Promise<void> {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    // Create a new untitled document
-    const doc = await vscode.workspace.openTextDocument({
-      content: text,
-      language: 'markdown'
-    });
-    await vscode.window.showTextDocument(doc);
-    return;
-  }
+// ============================================
+// Inline execute() logic (no Python, no child_process)
+// ============================================
 
-  const selection = editor.selection;
-  await editor.edit(editBuilder => {
-    editBuilder.insert(selection.start, text);
-  });
+function hashStr(s: string): string {
+  return crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
 }
 
-async function listPromptsCommand(): Promise<void> {
-  const prompts = await loadAllPrompts();
+async function executeInline(
+  prompt: PromptMetadata,
+  inputs: Record<string, string>,
+  cfg: ReturnType<typeof getConfig>
+): Promise<string> {
+  if (!prompt.prompt) throw new Error('Prompt has no template');
+
+  const rendered = renderPrompt(prompt.prompt, inputs);
+
+  // Log analytics (fire-and-forget)
+  const logUsage = () => {
+    try {
+      const wsRoot = getWorkspaceRoot();
+      if (!wsRoot) return;
+      const baseDir = path.dirname(path.dirname(path.join(wsRoot, cfg.registryPath)));
+      const telDir = path.join(baseDir, '.telemetry');
+      if (!fs.existsSync(telDir)) fs.mkdirSync(telDir, { recursive: true });
+      const logFile = path.join(telDir, 'promptos-usage.jsonl');
+      const entry = JSON.stringify({
+        ts: new Date().toISOString(),
+        prompt_id: prompt.id,
+        version: prompt.version,
+        user: cfg.user || 'vscode-user',
+        role: cfg.role || null,
+        model: cfg.model,
+        channel: 'ide',
+        input_hash: hashStr(JSON.stringify(inputs)),
+        output_hash: null,
+        success: true,
+        latency_ms: 0
+      });
+      fs.appendFileSync(logFile, entry + '\n', 'utf-8');
+    } catch (_) { /* non-fatal */ }
+  };
+
+  logUsage();
+  return rendered; // IDE extension returns rendered prompt (dry-run by default)
+}
+
+// ============================================
+// Commands
+// ============================================
+
+async function cmdInsertPrompt(): Promise<void> {
+  const prompts = loadAllPrompts();
+  const cfg = getConfig();
 
   if (prompts.length === 0) {
-    vscode.window.showInformationMessage('No prompts found in the library.');
+    vscode.window.showWarningMessage('PromptOS: No prompts found. Check your registryPath setting.');
     return;
   }
 
-  const manifest = await loadManifest();
-
-  const items = prompts.map(prompt => {
-    const icon = manifest?.prompts[prompt.category]?.icon || 'file';
-    return {
-      label: `${icon} ${prompt.name}`,
-      description: prompt.id,
-      detail: `${prompt.description}\n\nCategory: ${prompt.category} | Version: ${prompt.version}`,
-      prompt: prompt
-    };
-  });
+  // QuickPick
+  const items = prompts.map(p => ({
+    label: p.name,
+    description: `${p.id} • ${p.category}`,
+    detail: p.description,
+    prompt: p
+  }));
 
   const selected = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Available prompts in the library',
+    placeHolder: 'Search prompts...',
     matchOnDescription: true,
-    matchOnDetail: true
+    matchOnDetail: true,
+    title: 'PromptOS: Select a Prompt'
   });
 
-  if (selected) {
-    // Show detailed information about the selected prompt
-    const prompt = selected.prompt;
-    const details = [
-      `**ID:** ${prompt.id}`,
-      `**Name:** ${prompt.name}`,
-      `**Category:** ${prompt.category}`,
-      `**Version:** ${prompt.version}`,
-      `**Description:** ${prompt.description}`,
-      prompt.role ? `**Role:** ${prompt.role}` : null,
-      prompt.author ? `**Author:** ${prompt.author}` : null,
-      prompt.tags ? `**Tags:** ${prompt.tags?.join(', ')}` : null,
-      prompt.inputs?.length ? `**Inputs:** ${prompt.inputs.map(i => i.name).join(', ')}` : null
-    ].filter(Boolean).join('\n');
+  if (!selected) return;
 
-    await vscode.window.showInformationMessage(details, { modal: true });
+  const prompt = selected.prompt;
+  log(`Selected: ${prompt.id}`);
+
+  // Collect inputs
+  const inputs = await collectInputs(prompt);
+  if (inputs === null) {
+    log('User cancelled input collection');
+    return;
+  }
+
+  // Execute (inline)
+  try {
+    const output = await executeInline(prompt, inputs, cfg);
+    await deliverOutput(output, cfg.insertMode);
+    vscode.window.setStatusBarMessage(`PromptOS: ${prompt.name} inserted`, 3000);
+    log(`Prompt ${prompt.id} executed and delivered (mode: ${cfg.insertMode})`);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    vscode.window.showErrorMessage(`PromptOS Error: ${msg}`);
+    log(`Error: ${msg}`);
   }
 }
 
-async function loadPromptCommand(): Promise<void> {
-  const prompts = await loadAllPrompts();
+async function cmdListPrompts(): Promise<void> {
+  const prompts = loadAllPrompts();
 
   if (prompts.length === 0) {
-    vscode.window.showInformationMessage('No prompts found in the library.');
+    vscode.window.showWarningMessage('PromptOS: No prompts found.');
     return;
   }
 
-  // Show input box to enter prompt ID
-  const promptId = await vscode.window.showInputBox({
-    prompt: 'Enter prompt ID',
-    placeHolder: 'e.g., codegen-v1'
+  const items = prompts.map(p => ({
+    label: p.name,
+    description: p.id,
+    detail: `${p.description} | v${p.version} | ${p.category}`,
+    prompt: p
+  }));
+
+  const selected = await vscode.window.showQuickPick(items, {
+    placeHolder: 'Browse available prompts',
+    matchOnDescription: true,
+    matchOnDetail: true,
+    title: 'PromptOS: All Prompts'
   });
 
-  if (!promptId) {
-    return;
-  }
+  if (!selected) return;
 
-  const prompt = prompts.find(p => p.id === promptId);
+  const p = selected.prompt;
+  const details = [
+    `**${p.name}** (\`${p.id}\`)`,
+    `v${p.version} · ${p.category}`,
+    ``,
+    p.description,
+    p.role ? `\n**Role:** ${p.role}` : '',
+    p.tags ? `\n**Tags:** ${p.tags.join(', ')}` : '',
+    p.inputs ? `\n**Inputs:** ${p.inputs.map(i => `${i.name}${i.required ? '*' : ''}`).join(', ')}` : ''
+  ].filter(s => s !== undefined).join('\n');
 
-  if (!prompt) {
-    vscode.window.showErrorMessage(`Prompt with ID '${promptId}' not found.`);
-    return;
-  }
-
-  const workspaceRoot = getWorkspaceRoot();
-  if (workspaceRoot) {
-    const promptPath = path.join(workspaceRoot.fsPath, prompt.file);
-    const doc = await vscode.workspace.openTextDocument(promptPath);
-    await vscode.window.showTextDocument(doc);
-  }
+  await vscode.window.showInformationMessage(details, { modal: true }, 'Insert').then(async action => {
+    if (action === 'Insert') {
+      await cmdInsertPrompt();
+    }
+  });
 }
 
-function refreshPromptsCommand(): void {
-  refreshCache();
-  vscode.window.showInformationMessage('PromptOS: Prompt cache refreshed.');
+function cmdRefreshCache(): void {
+  clearCache();
+  vscode.window.showInformationMessage('PromptOS: Cache refreshed.');
+  log('Cache cleared');
 }
 
 // ============================================
@@ -415,51 +405,22 @@ function refreshPromptsCommand(): void {
 // ============================================
 
 class PromptHoverProvider implements vscode.HoverProvider {
-  async provideHover(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Hover | null> {
-    const config = getConfig();
-    if (!config.showMetadataOnHover) {
-      return null;
-    }
-
+  provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | null {
     const line = document.lineAt(position.line).text;
-    
-    // Check if line contains a prompt ID reference (e.g., @codegen-v1)
-    const promptIdMatch = line.match(/@([a-z0-9-]+)/i);
-    
-    if (!promptIdMatch) {
-      return null;
-    }
+    const match = line.match(/@([a-z0-9-]+)/i);
+    if (!match) return null;
 
-    const promptId = promptIdMatch[1];
-    const prompts = await loadAllPrompts();
-    const prompt = prompts.find(p => p.id === promptId);
+    const prompts = loadAllPrompts();
+    const prompt = prompts.find(p => p.id === match[1]);
+    if (!prompt) return null;
 
-    if (!prompt) {
-      return null;
-    }
+    const md = new vscode.MarkdownString();
+    md.appendMarkdown(`**${prompt.name}** \`${prompt.id}\`\n\n`);
+    md.appendMarkdown(`${prompt.description}\n\n`);
+    md.appendMarkdown(`*v${prompt.version} · ${prompt.category}*`);
+    if (prompt.role) md.appendMarkdown(`\n\n**Role:** ${prompt.role}`);
 
-    const markdown = new vscode.MarkdownString();
-    markdown.appendMarkdown(`**${prompt.name}** (${prompt.id})\n\n`);
-    markdown.appendMarkdown(`${prompt.description}\n\n`);
-    markdown.appendMarkdown(`*Category: ${prompt.category} | Version: ${prompt.version}*\n`);
-
-    if (prompt.role) {
-      markdown.appendMarkdown(`\n**Role:** ${prompt.role}`);
-    }
-
-    if (prompt.tags && prompt.tags.length > 0) {
-      markdown.appendMarkdown(`\n**Tags:** ${prompt.tags.join(', ')}`);
-    }
-
-    if (prompt.inputs && prompt.inputs.length > 0) {
-      markdown.appendMarkdown(`\n\n**Inputs:**\n`);
-      for (const input of prompt.inputs) {
-        const required = input.required ? ' (required)' : ' (optional)';
-        markdown.appendMarkdown(`- ${input.label}${required}\n`);
-      }
-    }
-
-    return new vscode.Hover(markdown, new vscode.Range(position, position));
+    return new vscode.Hover(md);
   }
 }
 
@@ -468,106 +429,64 @@ class PromptHoverProvider implements vscode.HoverProvider {
 // ============================================
 
 class PromptCompletionProvider implements vscode.CompletionItemProvider {
-  async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.CompletionItem[]> {
-    const prompts = await loadAllPrompts();
-    const line = document.lineAt(position.line).text;
-    
-    // Check if we're in a context where we might want prompt completions
-    // (after @ symbol or in specific contexts)
-    const beforeCursor = line.substring(0, position.character);
-    const shouldProvide = beforeCursor.includes('@') || beforeCursor.includes('prompt');
+  provideCompletionItems(document: vscode.TextDocument, position: vscode.Position): vscode.CompletionItem[] {
+    const line = document.lineAt(position.line).text.slice(0, position.character);
+    if (!line.includes('@') && !line.toLowerCase().includes('prompt')) return [];
 
-    if (!shouldProvide) {
-      return [];
-    }
-
-    const completionItems: vscode.CompletionItem[] = [];
-
-    for (const prompt of prompts) {
-      const item = new vscode.CompletionItem({
-        label: prompt.id,
-        detail: prompt.name,
-        description: prompt.description
-      }, vscode.CompletionItemKind.Reference);
-
-      item.detail = `${prompt.category} • ${prompt.name}`;
-      item.documentation = new vscode.MarkdownString(`
-**${prompt.name}** (${prompt.id})
-
-${prompt.description}
-
-*Category:* ${prompt.category}
-*Version:* ${prompt.version}
-${prompt.role ? `*Role:* ${prompt.role}` : ''}
-      `);
-
-      item.insertText = `@${prompt.id}`;
-      
-      completionItems.push(item);
-    }
-
-    return completionItems;
+    const prompts = loadAllPrompts();
+    return prompts.map(p => {
+      const item = new vscode.CompletionItem(p.id, vscode.CompletionItemKind.Reference);
+      item.detail = p.name;
+      item.documentation = new vscode.MarkdownString(`**${p.name}**\n\n${p.description}`);
+      item.insertText = p.id;
+      return item;
+    });
   }
 }
 
 // ============================================
-// Extension Activation
+// Extension Lifecycle
 // ============================================
 
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('PromptOS extension activated.');
+  log('PromptOS extension activating...');
 
-  // Register commands
-  const insertPromptCmd = vscode.commands.registerCommand('promptos.insertPrompt', insertPromptCommand);
-  const listPromptsCmd = vscode.commands.registerCommand('promptos.listPrompts', listPromptsCommand);
-  const loadPromptCmd = vscode.commands.registerCommand('promptos.loadPrompt', loadPromptCommand);
-  const refreshPromptsCmd = vscode.commands.registerCommand('promptos.refreshPrompts', refreshPromptsCommand);
+  // Update package.json settings contribution if needed
+  const cfg = getConfig();
 
+  // Commands
   context.subscriptions.push(
-    insertPromptCmd,
-    listPromptsCmd,
-    loadPromptCmd,
-    refreshPromptsCmd
+    vscode.commands.registerCommand('promptos.insertPrompt', cmdInsertPrompt),
+    vscode.commands.registerCommand('promptos.listPrompts', cmdListPrompts),
+    vscode.commands.registerCommand('promptos.refreshPrompts', cmdRefreshCache),
+    vscode.commands.registerCommand('promptos.loadPrompt', async () => {
+      const id = await vscode.window.showInputBox({ prompt: 'Enter prompt ID', placeHolder: 'e.g., codegen-v1' });
+      if (!id) return;
+      const wsRoot = getWorkspaceRoot();
+      if (!wsRoot) return;
+      const regPath = cfg.registryPath;
+      const baseDir = path.dirname(path.dirname(path.join(wsRoot, regPath)));
+      const registry = loadRegistry();
+      const entry = registry.find(p => p.id === id);
+      if (!entry) { vscode.window.showErrorMessage(`Prompt '${id}' not found`); return; }
+      const filePath = path.join(baseDir, entry.file);
+      const doc = await vscode.workspace.openTextDocument(filePath);
+      await vscode.window.showTextDocument(doc);
+    })
   );
 
-  // Register hover provider for markdown, yaml, and plaintext
-  hoverProvider = vscode.languages.registerHoverProvider(
-    ['markdown', 'yaml', 'plaintext', 'javascript', 'typescript'],
-    new PromptHoverProvider()
+  // Providers
+  const langs = ['markdown', 'yaml', 'plaintext', 'javascript', 'typescript'];
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(langs, new PromptHoverProvider()),
+    vscode.languages.registerCompletionItemProvider(langs, new PromptCompletionProvider(), '@')
   );
-  context.subscriptions.push(hoverProvider);
 
-  // Register completion provider
-  completionProvider = vscode.languages.registerCompletionItemProvider(
-    ['markdown', 'yaml', 'plaintext', 'javascript', 'typescript'],
-    new PromptCompletionProvider(),
-    '@'
-  );
-  context.subscriptions.push(completionProvider);
-
-  // Show welcome message on first activation
-  loadManifest().then(manifest => {
-    if (manifest) {
-      vscode.window.showInformationMessage(
-        `PromptOS v${manifest.version} loaded. Use Cmd+Alt+P to insert a prompt.`,
-        'Open Settings'
-      ).then(selection => {
-        if (selection === 'Open Settings') {
-          vscode.commands.executeCommand('workbench.action.openSettings', 'promptos');
-        }
-      });
-    }
-  });
+  log('PromptOS extension activated.');
+  vscode.window.setStatusBarMessage('PromptOS ready', 2000);
 }
 
 export function deactivate(): void {
-  console.log('PromptOS extension deactivated.');
-  
-  if (hoverProvider) {
-    hoverProvider.dispose();
-  }
-  
-  if (completionProvider) {
-    completionProvider.dispose();
-  }
+  log('PromptOS deactivated');
+  if (outputChannel) outputChannel.dispose();
 }

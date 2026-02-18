@@ -1,0 +1,43 @@
+id: translate-v1
+name: Text Translation
+description: Translate text from one language to another
+category: writing
+role: professional translator
+version: "1.0.0"
+author: JourdanLabs
+tags: [writing, translation, language]
+
+inputs:
+  - name: text
+    label: Text to translate
+    type: textarea
+    required: true
+  - name: target_language
+    label: Target Language
+    type: text
+    required: true
+    placeholder: e.g., Spanish, French, Japanese
+  - name: source_language
+    label: Source Language
+    type: text
+    required: false
+    placeholder: e.g., English (auto-detect if empty)
+
+outputs:
+  - name: translation
+    type: text
+
+prompt: |
+  Translate the following text to {{target_language}}.
+  {{#if source_language}}Source language: {{source_language}}.{{/if}}
+
+  Text:
+  {{text}}
+
+  Provide a natural, accurate translation.
+
+examples:
+  - name: en_to_es
+    inputs:
+      text: "Hello, how are you?"
+      target_language: Spanish

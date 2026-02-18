@@ -1,0 +1,33 @@
+{
+  "name": "promptos",
+  "version": "1.0.0",
+  "description": "PromptOS — Enterprise prompt management platform",
+  "main": "cli/index.js",
+  "bin": {
+    "promptos": "./cli/index.js"
+  },
+  "scripts": {
+    "run-prompt": "node cli/index.js run",
+    "list": "node cli/index.js list",
+    "validate": "node cli/index.js validate",
+    "analytics": "node cli/index.js analytics report",
+    "server": "node server/server.js --port 3001",
+    "test": "node cli/index.js validate && echo 'All prompts valid'"
+  },
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "llm",
+    "ai",
+    "promptos"
+  ],
+  "author": "JourdanLabs",
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.1.1",
+    "yaml": "^2.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

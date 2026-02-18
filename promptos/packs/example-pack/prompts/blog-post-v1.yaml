@@ -1,0 +1,43 @@
+id: blog-post-v1
+name: Blog Post Generator
+description: Generate a blog post from a topic and key points
+category: writing
+role: content writer
+version: "1.0.0"
+author: JourdanLabs
+tags: [writing, content, blog]
+
+inputs:
+  - name: topic
+    label: Blog Post Topic
+    type: text
+    required: true
+  - name: key_points
+    label: Key Points to Cover
+    type: textarea
+    required: false
+  - name: tone
+    label: Writing Tone
+    type: select
+    required: false
+    options: [professional, casual, technical, inspirational]
+
+outputs:
+  - name: blog_post
+    type: markdown
+
+prompt: |
+  Write a blog post about: {{topic}}
+  {{#if tone}}Tone: {{tone}}.{{/if}}
+  {{#if key_points}}
+  Key points to cover:
+  {{key_points}}
+  {{/if}}
+
+  Write an engaging, well-structured blog post with an introduction, main content sections, and conclusion.
+
+examples:
+  - name: tech_blog
+    inputs:
+      topic: "The future of AI in software development"
+      tone: professional

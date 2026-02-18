@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { templates, llmPresets, categories, Template, LLMPreset, TemplateVariable } from '@/data/templates';
 import { useTheme, Theme } from '@/context/ThemeContext';
+import UserGuide from '@/components/UserGuide';
 
 const iconMap: Record<string, React.ElementType> = {
   Eye, Bug, Building2, Globe, AlertTriangle, 
@@ -68,7 +69,7 @@ function Footer({ theme }: { theme: Theme }) {
 // ============================================
 // BRUTALIST THEME COMPONENTS
 // ============================================
-function BrutalistHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
+function BrutalistHeader({ activeMode, setActiveMode, theme, setTheme, onHelp }: any) {
   return (
     <header className="brutalist-header">
       <div className="brutalist-title">
@@ -78,7 +79,29 @@ function BrutalistHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
           <p>JOURDANLABS_×_C&L_STRATEGY</p>
         </div>
       </div>
-      <ThemeToggle theme={theme} setTheme={setTheme} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <ThemeToggle theme={theme} setTheme={setTheme} />
+        <button
+          onClick={onHelp}
+          title="Open user guide"
+          style={{
+            background: 'none',
+            border: '2px solid currentColor',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          ?
+        </button>
+      </div>
       <div className="brutalist-tabs">
         <button
           onClick={() => setActiveMode('templates')}
@@ -156,7 +179,7 @@ function BrutalistVariableInput({ variable, value, onChange }: any) {
 // ============================================
 // MINIMAL THEME COMPONENTS  
 // ============================================
-function MinimalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
+function MinimalHeader({ activeMode, setActiveMode, theme, setTheme, onHelp }: any) {
   return (
     <header className="minimal-header">
       <div className="minimal-title">
@@ -168,7 +191,30 @@ function MinimalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
           <p>JourdanLabs × C&amp;L Strategy</p>
         </div>
       </div>
-      <ThemeToggle theme={theme} setTheme={setTheme} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <ThemeToggle theme={theme} setTheme={setTheme} />
+        <button
+          onClick={onHelp}
+          title="Open user guide"
+          style={{
+            background: 'none',
+            border: '1.5px solid #d1d5db',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '14px',
+            color: '#6b7280',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          ?
+        </button>
+      </div>
       <div className="minimal-tabs">
         <button
           onClick={() => setActiveMode('templates')}
@@ -248,14 +294,38 @@ function MinimalVariableInput({ variable, value, onChange }: any) {
 // ============================================
 // TERMINAL THEME COMPONENTS
 // ============================================
-function TerminalHeader({ activeMode, setActiveMode, theme, setTheme }: any) {
+function TerminalHeader({ activeMode, setActiveMode, theme, setTheme, onHelp }: any) {
   return (
     <header className="terminal-header">
       <div className="terminal-title">
         <TerminalIcon className="w-5 h-5" />
         <span>Prompt OS — JourdanLabs × C&L Strategy — ~</span>
       </div>
-      <ThemeToggle theme={theme} setTheme={setTheme} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <ThemeToggle theme={theme} setTheme={setTheme} />
+        <button
+          onClick={onHelp}
+          title="Open user guide"
+          style={{
+            background: 'none',
+            border: '1px solid #4ade80',
+            borderRadius: '50%',
+            width: '28px',
+            height: '28px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '13px',
+            color: '#4ade80',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            fontFamily: 'monospace',
+          }}
+        >
+          ?
+        </button>
+      </div>
       <div className="terminal-tabs">
         <button
           onClick={() => setActiveMode('templates')}
@@ -379,6 +449,7 @@ function TerminalVariableInput({ variable, value, onChange }: any) {
 // ============================================
 export default function PromptLibrary() {
   const { theme, setTheme } = useTheme();
+  const [showGuide, setShowGuide] = useState(false);
   const [activeMode, setActiveMode] = useState<'templates' | 'custom'>('templates');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedLLM, setSelectedLLM] = useState<LLMPreset>(llmPresets[0]);
@@ -464,7 +535,7 @@ export default function PromptLibrary() {
 
   // Render appropriate header based on theme
   const renderHeader = () => {
-    const props = { activeMode, setActiveMode, theme, setTheme };
+    const props = { activeMode, setActiveMode, theme, setTheme, onHelp: () => setShowGuide(true) };
     switch (theme) {
       case 'brutalist': return <BrutalistHeader {...props} />;
       case 'minimal': return <MinimalHeader {...props} />;
@@ -714,6 +785,7 @@ export default function PromptLibrary() {
         )}
       </main>
       <Footer theme={theme} />
+      <UserGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
     </div>
   );
 }

@@ -1,0 +1,38 @@
+id: summarize-v1
+name: Summarization
+description: Summarize a piece of text into key points
+category: writing
+role: professional summarizer
+version: "1.0.0"
+author: JourdanLabs
+tags: [writing, summarization]
+
+inputs:
+  - name: text
+    label: Text to summarize
+    type: textarea
+    required: true
+  - name: length
+    label: Summary length
+    type: select
+    required: false
+    options: [short, medium, long]
+
+outputs:
+  - name: summary
+    type: markdown
+
+prompt: |
+  Summarize the following text into clear, concise key points.
+  {{#if length}}Length preference: {{length}}.{{/if}}
+
+  Text:
+  {{text}}
+
+  Provide a structured summary with main points.
+
+examples:
+  - name: article_summary
+    inputs:
+      text: "Artificial intelligence is transforming industries..."
+      length: short

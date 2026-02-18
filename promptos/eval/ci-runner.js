@@ -507,13 +507,32 @@ async function main() {
   const junitOnly = args.includes('--junit-only');
   const verbose = args.includes('--verbose');
   const dryRun = args.includes('--dry-run');
+  const changedOnly = args.includes('--changed-only');
+
+  // Determine which prompt IDs to run (changed-only mode)
+  let changedIds = null;
+  if (changedOnly) {
+    const envChanged = process.env.CHANGED_PROMPTS || '';
+    if (envChanged) {
+      changedIds = envChanged.split(',').map(s => s.trim()).filter(Boolean);
+      console.log(`[ci-runner] Changed-only mode. Prompt IDs: ${changedIds.join(', ')}`);
+    } else {
+      console.log('[ci-runner] Changed-only mode but no CHANGED_PROMPTS set. Running all tests.');
+    }
+  }
   
   console.log('Loading test cases...');
   
   // Load test cases from both sources
   const externalCases = loadExternalTestCases(EVAL_DIR);
   const embeddedCases = loadEmbeddedTestCases(PROMPTS_DIR);
-  const allTestCases = [...externalCases, ...embeddedCases];
+  let allTestCases = [...externalCases, ...embeddedCases];
+
+  // Filter to changed prompt IDs if requested
+  if (changedIds && changedIds.length > 0) {
+    allTestCases = allTestCases.filter(tc => changedIds.includes(tc.promptId));
+    console.log(`[ci-runner] Filtered to ${allTestCases.length} test case(s) for changed prompts`);
+  }
   
   if (allTestCases.length === 0) {
     console.log('No test cases found.');

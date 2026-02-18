@@ -1,0 +1,15 @@
+{
+  "name": "promptos-server",
+  "version": "1.0.0",
+  "description": "PromptOS Registry Server — minimal HTTP server for the prompt registry",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js --port 3001",
+    "dev": "node server.js --port 3001"
+  },
+  "author": "JourdanLabs",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

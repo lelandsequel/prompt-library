@@ -1,0 +1,58 @@
+# PromptOS Pack Schema v1.0.0
+# Defines the structure of a pack.yaml manifest file.
+
+schema_version: "1.0.0"
+
+# Required fields in pack.yaml
+required:
+  - name
+  - version
+  - description
+  - prompts
+
+fields:
+  name:
+    type: string
+    description: Unique pack identifier (e.g., "devops-pack")
+    pattern: "^[a-z0-9-]+$"
+
+  version:
+    type: string
+    description: Semantic version of the pack
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+
+  description:
+    type: string
+    description: Human-readable description of the pack
+
+  author:
+    type: string
+    required: false
+
+  tags:
+    type: array
+    items: string
+    required: false
+
+  prompts:
+    type: array
+    description: List of prompt files included in the pack
+    items:
+      type: object
+      required: [id, file]
+      properties:
+        id:
+          type: string
+          description: Prompt ID (must be unique in target registry)
+        file:
+          type: string
+          description: Relative path to prompt YAML within the pack
+        category:
+          type: string
+          required: false
+
+  dependencies:
+    type: array
+    items: string
+    required: false
+    description: Other packs this pack depends on

@@ -66,25 +66,36 @@
     "configuration": {
       "title": "PromptOS",
       "properties": {
+        "promptos.registryPath": {
+          "type": "string",
+          "default": "./promptos/registry/index.json",
+          "description": "Path to the PromptOS registry index.json file"
+        },
+        "promptos.insertMode": {
+          "type": "string",
+          "enum": ["insert", "clipboard", "both"],
+          "default": "insert",
+          "description": "How to deliver prompt output: insert into editor, copy to clipboard, or both"
+        },
+        "promptos.model": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Default model for prompt execution"
+        },
+        "promptos.user": {
+          "type": "string",
+          "default": "",
+          "description": "Username for RBAC checks"
+        },
+        "promptos.role": {
+          "type": "string",
+          "default": "",
+          "description": "Role for RBAC checks (used if user is not set)"
+        },
         "promptos.promptDirectory": {
           "type": "string",
           "default": "./promptos/prompts",
-          "description": "Directory containing prompt files"
-        },
-        "promptos.registryFile": {
-          "type": "string",
-          "default": "./promptos/registry/index.json",
-          "description": "Path to the prompt registry file"
-        },
-        "promptos.manifestFile": {
-          "type": "string",
-          "default": "./promptos/ide/promptos.json",
-          "description": "Path to the PromptOS manifest file"
-        },
-        "promptos.includeVariables": {
-          "type": "boolean",
-          "default": true,
-          "description": "Include variable injection in quick picks"
+          "description": "Directory containing prompt files (legacy)"
         },
         "promptos.showMetadataOnHover": {
           "type": "boolean",

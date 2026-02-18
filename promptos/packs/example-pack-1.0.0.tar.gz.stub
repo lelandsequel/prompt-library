@@ -1,0 +1,31 @@
+{
+  "pack": {
+    "name": "example-pack",
+    "version": "1.0.0",
+    "description": "Starter pack with example prompts for writing, summarization, and translation",
+    "author": "JourdanLabs",
+    "tags": [
+      "writing",
+      "summarization",
+      "translation"
+    ],
+    "prompts": [
+      {
+        "id": "summarize-v1",
+        "file": "prompts/summarize-v1.yaml",
+        "category": "writing"
+      },
+      {
+        "id": "translate-v1",
+        "file": "prompts/translate-v1.yaml",
+        "category": "writing"
+      },
+      {
+        "id": "blog-post-v1",
+        "file": "prompts/blog-post-v1.yaml",
+        "category": "writing"
+      }
+    ]
+  },
+  "built_at": "2026-02-18T07:15:17.775Z"
+}
