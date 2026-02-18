@@ -11,8 +11,8 @@
   --bg-tertiary: #141414;
   --bg-input: #0c0c0c;
   --text-primary: #ffffff;
-  --text-secondary: #c0c0c0;
-  --text-muted: #666666;
+  --text-secondary: #dddddd;
+  --text-muted: #888888;
   --border-color: #ffffff;
   --border-width: 3px;
   --accent: #ffffff;
@@ -20,7 +20,7 @@
   --radius: 0px;
   --font-mono: 'Courier New', Courier, monospace;
   --shadow: none;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .minimal {
@@ -78,9 +78,9 @@ body {
 
 .brutalist body {
   font-family: 'Courier New', Courier, monospace;
-  font-weight: 600;
-  font-size: 15px;
-}
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
 }
 
 .app-container {
