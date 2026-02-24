@@ -1,11 +1,4 @@
 import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs';
-
-const BUILDS_DIR = path.resolve(process.cwd(), 'builds');
-const SHIPMACHINE_DIR = path.resolve(process.cwd(), '..', 'zeroclaw-shipmachine');
-const SHIPMACHINE_CLI = path.join(SHIPMACHINE_DIR, 'cli', 'index.js');
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +11,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a project directory based on the objective
+    // On Vercel, we can't spawn ShipMachine locally.
+    // Return the plan confirmation with a note to use CLI for full execution.
+    if (process.env.VERCEL) {
+      return NextResponse.json({
+        success: true,
+        message: 'Plan approved! Use `shipmachine ship` locally to execute builds.',
+        cloudMode: true,
+        plan,
+      });
+    }
+
+    // Local execution: spawn ShipMachine CLI
+    const { spawn } = await import('child_process');
+    const path = await import('path');
+    const fs = await import('fs');
+
+    const BUILDS_DIR = path.resolve(process.cwd(), 'builds');
+    const SHIPMACHINE_CLI = path.resolve(process.cwd(), '..', 'zeroclaw-shipmachine', 'cli', 'index.js');
+
     const slug = (plan.objective || prompt)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -28,13 +39,11 @@ export async function POST(request: Request) {
     const projectDir = path.join(BUILDS_DIR, `${slug}-${timestamp}`);
     fs.mkdirSync(projectDir, { recursive: true });
 
-    // Write the plan as a seed file so ShipMachine has context
     fs.writeFileSync(
       path.join(projectDir, 'PLAN.md'),
       `# Build Plan\n\n**Objective:** ${plan.objective}\n\n**Architecture:** ${plan.architecture || 'N/A'}\n\n**Tech:** ${(plan.tech || []).join(', ')}\n\n**Style:** ${plan.style || 'N/A'}\n\n## Steps\n${(plan.steps || []).map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}\n\n## Files to Create\n${(plan.files_to_create || []).map((f: string) => `- ${f}`).join('\n')}\n`
     );
 
-    // Initialize a basic package.json so it's a valid project
     if (!fs.existsSync(path.join(projectDir, 'package.json'))) {
       fs.writeFileSync(
         path.join(projectDir, 'package.json'),
@@ -42,20 +51,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Run ShipMachine via CLI
     const objective = plan.objective || prompt;
-    const cliPath = SHIPMACHINE_CLI;
 
     const result = await new Promise<{ success: boolean; stdout: string; stderr: string; code: number | null }>((resolve) => {
       let stdout = '';
       let stderr = '';
 
       const proc = spawn('node', [
-        cliPath,
+        SHIPMACHINE_CLI,
         'run-task',
         '--objective', objective,
         '--repo', projectDir,
-        // '--dry-run', // Removed — actually execute
       ], {
         cwd: projectDir,
         env: {
@@ -63,22 +69,15 @@ export async function POST(request: Request) {
           ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
           NO_COLOR: '1',
         },
-        timeout: 300_000, // 5 min
+        timeout: 300_000,
       });
 
-      proc.stdout?.on('data', (d) => { stdout += d.toString(); });
-      proc.stderr?.on('data', (d) => { stderr += d.toString(); });
-
-      proc.on('close', (code) => {
-        resolve({ success: code === 0, stdout, stderr, code });
-      });
-
-      proc.on('error', (err) => {
-        resolve({ success: false, stdout, stderr: err.message, code: null });
-      });
+      proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+      proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+      proc.on('close', (code: number | null) => resolve({ success: code === 0, stdout, stderr, code }));
+      proc.on('error', (err: Error) => resolve({ success: false, stdout, stderr: err.message, code: null }));
     });
 
-    // List files created
     const filesCreated: string[] = [];
     const walk = (dir: string, prefix = '') => {
       try {
@@ -99,7 +98,7 @@ export async function POST(request: Request) {
         : `Build finished with code ${result.code}`,
       projectDir: `builds/${slug}-${timestamp}`,
       filesCreated,
-      stdout: result.stdout.slice(-3000), // last 3K chars
+      stdout: result.stdout.slice(-3000),
       stderr: result.stderr.slice(-1000),
       plan,
     });
