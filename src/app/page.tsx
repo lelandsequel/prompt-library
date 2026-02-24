@@ -1071,6 +1071,18 @@ export default function PromptLibrary() {
               </div>
               <div style={{ padding: '16px' }}>
                 <p style={{ margin: 0, marginBottom: '12px', fontSize: '15px', fontWeight: 600 }}>{shipResult.message}</p>
+                {shipResult.cloudMode && (
+                  <div style={{ marginTop: '12px', padding: '12px 16px', background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08))', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.15)' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 600 }}>⚡ Build execution requires local install</p>
+                    <p style={{ margin: '0 0 8px', fontSize: '13px', opacity: 0.8 }}>
+                      The web version generates your build plan with AI. To execute builds and generate actual code, install ShipMachine locally:
+                    </p>
+                    <pre style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace', background: 'rgba(0,0,0,0.06)', borderRadius: '6px', padding: '10px 12px', whiteSpace: 'pre-wrap' }}>{`npx shipmachine ship "your prompt here"`}</pre>
+                    <p style={{ margin: '8px 0 0', fontSize: '12px', opacity: 0.6 }}>
+                      <a href="https://github.com/lelandsequel/shipmachine#quick-start" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>View install guide →</a>
+                    </p>
+                  </div>
+                )}
                 {shipResult.projectDir && (
                   <p style={{ margin: '8px 0', fontSize: '13px', fontFamily: 'monospace', opacity: 0.8 }}>
                     📁 {shipResult.projectDir}
