@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Call Anthropic API with Claude Haiku
     const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-3-5-20241022',
       max_tokens: 2000,
       temperature: 0.7,
       system: systemPrompt,

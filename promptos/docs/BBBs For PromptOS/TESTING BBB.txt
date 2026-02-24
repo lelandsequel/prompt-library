@@ -1,0 +1,226 @@
+# BuilderOS — “Test the Everloving Shit Out of It” BBB
+# Audience: Android 18 + helper testers
+# Goal: Prove BuilderOS is a reliable PLATFORM (not just a working build)
+# Output: A concise, scored test report + list of real bugs w/ repro + fix PRs
+
+################################################################################
+# 0) How to Run This
+################################################################################
+# Run tests in this order:
+#   T0 → T1 → T2 → T3 → T4 → T5 → T6 → T7
+# Stop if any BLOCKER appears, fix, then resume.
+
+# Report format (copy/paste at end):
+#   TestID | Score | Verdict | Notes | Bugs Found
+# Score guidance:
+#   - “pass” = 1
+#   - “partial” = 0.5
+#   - “fail” = 0
+# A “platform-ready” run is:
+#   - No BLOCKERS
+#   - No policy bypasses
+#   - Cross-machine sync works
+#   - Resumable runs work
+#   - Pack verification works
+
+################################################################################
+# 1) Setup Matrix
+################################################################################
+# You need:
+#   Machine A + Machine B (or 2 clean workdirs simulating 2 machines)
+#   A GitHub repo (test repo is fine)
+#   Vercel CLI configured (optional for deploy tests)
+#   Backend team mode running (Express API + Postgres)
+#
+# Create a fresh test project:
+#   builderos project init
+#   builderos desk apply saas
+#   builderos prompt list
+# Confirm policies:
+#   deny-by-default enabled
+#   env scopes exist: dev/stage/prod
+
+################################################################################
+# 2) T0 — Smoke: Golden Loop (Local)
+################################################################################
+# Objective: Verify the core promise end-to-end locally.
+
+# Steps:
+# 1) Apply Desk: SaaS
+# 2) Spawn Builder agent
+# 3) Run feature pipeline:
+#    - plan → generate → test → package → PR → deploy_preview (if enabled)
+# 4) Inspect run timeline + artifacts + provenance
+
+# Pass criteria:
+# - run completes
+# - artifacts written and hash recorded
+# - provenance includes prompt@version + agent + tool traces
+# - PR created (if configured)
+# - deploy URL captured (if enabled)
+
+################################################################################
+# 3) T1 — Cross-Machine Sync (MOST IMPORTANT)
+################################################################################
+# Objective: Prove Team Mode actually works across machines.
+
+# On Machine A:
+# 1) Create/modify prompt: builder@0.1.1
+# 2) builderos sync push
+# 3) Create a run, ensure it uses builder@0.1.1
+
+# On Machine B:
+# 1) builderos sync pull
+# 2) Confirm builder@0.1.1 exists in registry
+# 3) Run same pipeline
+# 4) Verify it resolves prompts correctly and completes
+
+# Reverse direction:
+# - Create tester@0.1.1 on Machine B, push, pull on A, run.
+
+# Pass criteria:
+# - prompts + policies sync correctly
+# - no registry/path inconsistencies
+# - runs reproducible between machines
+# - audit log shows sync + runs
+
+################################################################################
+# 4) T2 — Resumable Runs / Crash Recovery
+################################################################################
+# Objective: Prove interruption doesn’t corrupt state.
+
+# Steps:
+# 1) Start a pipeline run
+# 2) Kill the process mid-step (hard kill)
+# 3) Restart BuilderOS / CLI
+# 4) Resume the run:
+#    builderos run resume {run_id}
+
+# Pass criteria:
+# - run resumes at correct step boundary
+# - no duplicated artifacts unless intentional
+# - logs continue streaming
+# - final run status correct
+
+################################################################################
+# 5) T3 — Parallel Determinism (Race Condition Hunt)
+################################################################################
+# Objective: Ensure parallel steps don’t create nondeterministic outputs.
+
+# Steps:
+# 1) Run a pipeline with parallel steps enabled
+# 2) Run it again with same inputs (no code changes)
+# 3) Compare:
+#    - artifacts hashes
+#    - run outputs
+#    - timeline ordering
+#
+# Pass criteria:
+# - artifacts match or differences are explainable/benign
+# - no intermittent failures
+# - no “heisenbugs” from parallelism
+
+################################################################################
+# 6) T4 — Policy Escalation + Approvals (Security Boundary)
+################################################################################
+# Objective: Ensure destructive operations cannot bypass guardrails.
+
+# Test cases:
+# A) Attempt prod deploy without approval → should BLOCK + prompt approval UI
+# B) Deny approval → run halts cleanly, no side effects
+# C) Approve → run resumes, prod deploy executes, audit log records approval
+#
+# Additionally:
+# - verify env-scoped permissions:
+#   dev allowed actions ≠ prod allowed actions
+
+# Pass criteria:
+# - deny-by-default works
+# - approval requests appear with clear diff/reason
+# - no tool executes when disallowed
+# - approvals recorded in provenance + audit log
+
+################################################################################
+# 7) T5 — Pack Integrity (Marketplace Trust Model)
+################################################################################
+# Objective: Verify signing and tamper detection.
+
+# Steps:
+# 1) Install a signed starter pack
+# 2) Verify signature passes
+# 3) Tamper test:
+#    - modify one file inside the pack contents
+#    - attempt install again
+#
+# Pass criteria:
+# - tampered pack fails verification
+# - valid pack installs cleanly
+# - uninstall removes all installed assets cleanly
+# - reinstall works
+# - upgrade/downgrade works if versioned
+
+################################################################################
+# 8) T6 — Prompt Version Rollback + Evals
+################################################################################
+# Objective: Prove prompt lifecycle guarantees (semver + evals + CI hooks).
+
+# Steps:
+# 1) Have builder@0.1.0 and builder@0.2.0
+# 2) Run eval suite on both (golden tests)
+# 3) Set “latest” to 0.2.0 and run pipeline
+# 4) Roll back “latest” to 0.1.0 and rerun
+#
+# Pass criteria:
+# - eval harness runs and reports correctly
+# - golden tests detect regressions
+# - rollback actually changes behavior deterministically
+# - CI template runs successfully in GitHub Actions (at least once)
+
+################################################################################
+# 9) T7 — Long-Run Log + Timeline Stress
+################################################################################
+# Objective: Ensure streaming logs + timeline don’t break under load.
+
+# Steps:
+# 1) Run a long pipeline (many steps, verbose logs)
+# 2) Confirm:
+#    - no log truncation
+#    - no missing logs
+#    - timeline remains complete
+#    - artifacts panel remains responsive
+
+# Pass criteria:
+# - logs complete and indexed
+# - timeline complete
+# - step expand shows prompt version + artifacts + policy events
+
+################################################################################
+# 10) Bug Handling Rules
+################################################################################
+# For each real bug:
+# - classify: BLOCKER / MAJOR / MINOR
+# - include exact repro steps
+# - include expected vs actual
+# - link to file(s) + suspected root cause
+# - propose fix + open PR
+#
+# BLOCKERS (examples):
+# - policy bypass
+# - prod deploy executes without approval
+# - registry sync corrupts prompts
+# - resumable run loses state or duplicates side effects
+# - pack tamper installs successfully
+
+################################################################################
+# 11) Final Deliverable (What you send TJ)
+################################################################################
+# 1) A single table summary:
+#    TestID | Score | Verdict | Notes | Bugs Found
+# 2) A numbered list of bugs with:
+#    severity, repro, root cause, fix PR link
+# 3) “Platform Readiness Verdict”:
+#    - READY for private alpha / NOT READY + why
+
+################################################################################
+# END BBB
+################################################################################

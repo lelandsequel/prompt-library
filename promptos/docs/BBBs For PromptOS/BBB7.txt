@@ -1,0 +1,106 @@
+# BBB 7 — VS Code Extension Wiring
+# Goal: Connect BuilderOS CLI + runtime into VS Code UI panels
+
+################################################################################
+# 1) Extension Structure
+################################################################################
+
+extension/
+  extension.ts
+  commands/
+    applyDesk.ts
+    spawnAgent.ts
+    runShip.ts
+    inspectRun.ts
+  views/
+    agentsView.ts
+    desksView.ts
+    runsView.ts
+  panels/
+    runPanel.ts
+
+################################################################################
+# 2) Extension Activation
+################################################################################
+
+extension.ts:
+
+onActivate():
+  registerCommands()
+  registerViews()
+  loadBuilderOSState()
+
+################################################################################
+# 3) Commands
+################################################################################
+
+BuilderOS: Apply Desk
+→ call CLI: builderos desk apply {desk}
+
+BuilderOS: Spawn Agent
+→ call CLI: builderos agent run {agent}
+
+BuilderOS: Run Ship
+→ call CLI: builderos ship run
+
+BuilderOS: Inspect Run
+→ open runPanel(run_id)
+
+Implementation:
+child_process.exec("builderos ...")
+
+################################################################################
+# 4) Sidebar Views
+################################################################################
+
+Agents View:
+- list agents from builderos.yaml
+- button: Run
+
+Desks View:
+- list desks
+- button: Apply
+
+Runs View:
+- list .builderos/runs
+- click → open Run Panel
+
+################################################################################
+# 5) Run Panel
+################################################################################
+
+Display:
+
+Run ID
+Status
+Steps
+Artifacts
+Logs
+
+Artifacts clickable → open file
+
+################################################################################
+# 6) State Loading
+################################################################################
+
+loadBuilderOSState():
+
+read builderos.yaml
+read .builderos/runs/
+read desks/
+
+cache in memory
+
+################################################################################
+# 7) MVP Scope
+################################################################################
+
+✔ commands wired  
+✔ runs list  
+✔ run panel  
+✘ live streaming logs  
+✘ remote backend  
+
+################################################################################
+# End BBB 7
+################################################################################

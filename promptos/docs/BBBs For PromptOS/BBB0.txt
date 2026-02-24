@@ -1,0 +1,246 @@
+# JourdanLabs BuilderOS — High-Level Architecture + Evolution Path (for Android 18)
+# Goal: Agent-native "Factory IDE" that turns PromptOS + ShipMachine + Desk templates into a repeatable build→ship→deploy loop.
+
+################################################################################
+# 0) North Star (1 sentence)
+################################################################################
+# BuilderOS = VS Code-compatible workspace where agents can plan, generate, test, deploy, and package products
+# using versioned prompts (PromptOS), guarded execution (ShipMachine), and reusable vertical scaffolds (Desk OS).
+
+################################################################################
+# 1) Product Definition (what we’re actually shipping)
+################################################################################
+# BuilderOS is NOT “another IDE.”
+# BuilderOS is a FACTORY CONTROL PLANE:
+# - One workspace to: define prompt/policy → spawn agents → generate code/docs → run tests → deploy → monitor → iterate
+# - Opinionated rails: Supabase + Vercel/Fly + GitHub + Postgres/pgvector + task orchestration
+# - Templates (Desks): repeatable product blueprints + industry-specific “operators”
+
+Core primitives (must exist in all phases):
+# - PROMPTS: versioned prompt specs (PromptOS)
+# - POLICIES: guardrails + permissions (PromptOS policy engine)
+# - AGENTS: roles with tools, memory, tasks (Krillin/18 orchestration)
+# - RUNS: executions w/ logs, artifacts, diffs, approval gates (ShipMachine)
+# - DESKS: templates/scaffolds for products/workflows (Desk OS)
+# - SHIPS: deployments/releases with provenance (who/what prompt generated what)
+
+################################################################################
+# 2) Architecture — Components (modular, VS Code-compatible)
+################################################################################
+
+A) UI Layer (VS Code Extension first; fork later only if needed)
+# - BuilderOS Sidebar (Activity Bar):
+#   1) Agents
+#   2) Prompts
+#   3) Desks
+#   4) Runs (ShipMachine)
+#   5) Deployments
+# - BuilderOS Panels:
+#   - Agent Console (chat + tool traces)
+#   - Diff/Review panel (PR-style)
+#   - Run Logs (structured)
+#   - Artifact Browser (generated files, docs, tests)
+# - Commands Palette:
+#   - “BuilderOS: Spawn Agent”
+#   - “BuilderOS: Run ShipMachine”
+#   - “BuilderOS: Apply Desk Template”
+#   - “BuilderOS: Deploy”
+#   - “BuilderOS: Create PR”
+
+B) Local Runtime (on dev machine)
+# - builderos-cli (Node or Python):
+#   - orchestrates agent runs locally
+#   - applies templates
+#   - manages sandbox execution (Docker optional)
+#   - interfaces with PromptOS + ShipMachine
+# - Workspace Config:
+#   - builderos.yaml (project config, tool permissions, env refs)
+#   - prompts/ (PromptOS specs)
+#   - desks/ (template manifests)
+#   - ship/ (ShipMachine pipelines)
+#   - .builderos/ (state, run logs, caches)
+
+C) PromptOS (Policy + Prompt Versioning)
+# - Prompt Registry:
+#   - versioned prompts: prompt_id@semver
+#   - prompt metadata: owner, tags, evals, regression notes
+# - Policy Engine:
+#   - tool allowlists (filesystem, network, git, db, deploy)
+#   - environment scopes (dev/stage/prod)
+#   - approvals (human-in-the-loop gates)
+# - Eval Harness:
+#   - unit evals for prompts
+#   - golden tests for outputs
+#   - drift detection
+
+D) ShipMachine (Execution + Provenance)
+# - Pipelines:
+#   - plan → generate → test → package → deploy → verify
+# - Provenance:
+#   - every artifact tied to:
+#     prompt version + agent + tool calls + inputs + commit hash
+# - Safety:
+#   - “dry run” mode
+#   - approvals for destructive operations
+#   - secret redaction in logs
+
+E) Integrations Layer (Adapters)
+# - GitHub:
+#   - create branch/commit/PR
+#   - comment with run logs & diffs
+# - Supabase:
+#   - migrations
+#   - schema introspection
+#   - seed data
+# - Deploy:
+#   - Vercel/Fly/Render adapters
+#   - env var management
+# - Observability:
+#   - Sentry/Logtail/PostHog hooks (optional)
+
+F) Backend (optional in early phase; later becomes multi-tenant)
+# - builderos-api (FastAPI or Node):
+#   - prompt registry (shared)
+#   - run history
+#   - team RBAC
+#   - template marketplace
+# - Postgres + pgvector:
+#   - prompts, runs, artifacts, agent memory indexes
+
+################################################################################
+# 3) Evolution Path (the smart sequencing)
+################################################################################
+
+PHASE 0 — INTERNAL DOGFOOD (1–2 weeks)
+# Deliverable:
+# - builderos-cli that can:
+#   - load builderos.yaml
+#   - run “agent: plan” → “agent: generate” → “agent: test”
+#   - output a structured Run (logs + artifact list + diff)
+# Success metric:
+# - 1 real internal repo shipped end-to-end with repeatability.
+
+PHASE 1 — VS CODE EXTENSION (MVP)
+# Deliverable:
+# - Extension UI: sidebar + agent console + run logs
+# - Commands:
+#   - Spawn Agent
+#   - Run Pipeline
+#   - Apply Desk Template
+# - Local-only runtime (no backend required)
+# Success metric:
+# - “One-click ship” for a small Next.js + Supabase app.
+
+PHASE 2 — DESK TEMPLATES (the moat begins)
+# Deliverable:
+# - Desk manifests (desk.json):
+#   - what it scaffolds (routes, db tables, auth, analytics)
+#   - required env vars
+#   - default prompts
+# - 3 starter desks:
+#   1) SaaS Desk (Next.js + Supabase auth + billing stub)
+#   2) pSEO Desk (programmatic pages + content pipeline)
+#   3) Ops Desk (intake forms + dashboard + workflow)
+# Success metric:
+# - new product spun up in <30 minutes with consistent structure.
+
+PHASE 3 — PROMPTOS REGISTRY + EVALS (quality & scale)
+# Deliverable:
+# - prompt versioning, tagging, rollback
+# - eval harness integrated into ShipMachine
+# - regression tests for prompts & templates
+# Success metric:
+# - prompt changes don’t break shipping; measurable output quality improves.
+
+PHASE 4 — TEAM MODE (multi-tenant control plane)
+# Deliverable:
+# - builderos-api + Postgres:
+#   - shared prompt registry
+#   - run history
+#   - RBAC + policies
+# - “Org / Project / Environment” model:
+#   - dev/stage/prod permissions
+# Success metric:
+# - multiple operators can ship safely with approvals and audit trails.
+
+PHASE 5 — FORK VS CODE (ONLY if necessary)
+# Trigger conditions:
+# - extension limitations block core UX (deep editor integration, perf)
+# - need custom update channel + integrated auth/licensing
+# Deliverable:
+# - branded BuilderOS distribution (still VS Code-compatible)
+# Success metric:
+# - seamless installs, auto-updates, enterprise policies.
+
+PHASE 6 — MARKETPLACE + ECOSYSTEM
+# Deliverable:
+# - Desk marketplace (paid templates)
+# - Agent packs (roles/playbooks)
+# - Pipeline packs (deploy/verify/monitor)
+# Success metric:
+# - third parties create templates; revenue share; lock-in via workflow.
+
+################################################################################
+# 4) Data Model (minimum viable schema)
+################################################################################
+# (Local-first; later mirrored to backend)
+
+Entities:
+# - Project {id, name, repo_url, builderos_yaml, created_at}
+# - Prompt {id, name, semver, content, metadata, eval_suite_id}
+# - Policy {id, scope, tool_permissions, approvals_required}
+# - Agent {id, name, role, toolset, memory_refs}
+# - Run {id, project_id, pipeline, status, started_at, ended_at, provenance_json}
+# - Artifact {id, run_id, path, type, hash, created_at}
+# - Desk {id, name, version, manifest_json, prompts_refs}
+# - Deployment {id, run_id, target, url, status, logs_ref}
+
+################################################################################
+# 5) Guardrails (non-negotiables)
+################################################################################
+# - No destructive actions without explicit policy + approval gate
+# - Secrets never logged; env vars referenced via secure store
+# - Every change tied to provenance (prompt + agent + commit)
+# - Reproducible runs: same inputs should recreate artifacts
+
+################################################################################
+# 6) “One Killer Demo” (what to build first)
+################################################################################
+# Demo script:
+# 1) Open empty repo
+# 2) Apply “SaaS Desk”
+# 3) Spawn agent “Builder”
+# 4) ShipMachine pipeline runs:
+#    - generate app + supabase schema + auth + landing page
+#    - run tests
+#    - create PR
+#    - deploy to Vercel (optional)
+# 5) Show provenance: click artifact → see prompt version + tool trace + diff
+# Outcome:
+# - “I can watch the factory build a product, with receipts.”
+
+################################################################################
+# 7) Build Checklist (execution order for 18)
+################################################################################
+# 1) builderos.yaml spec (project config)
+# 2) builderos-cli (local runtime + run logs)
+# 3) ShipMachine pipeline skeleton (plan/generate/test/package)
+# 4) VS Code extension UI (sidebar + panels)
+# 5) Desk manifest format + 1 Desk template
+# 6) PromptOS prompt versioning (local semver)
+# 7) GitHub adapter: branch + commit + PR + comment logs
+# 8) Deploy adapter (Vercel) optional
+# 9) Add eval harness + golden tests for prompts
+# 10) Backend only after dogfood success
+
+################################################################################
+# 8) Naming (keep it clean)
+################################################################################
+# Product: JourdanLabs BuilderOS
+# Runtime: ShipMachine
+# Prompt system: PromptOS
+# Templates: Desks (Desk OS)
+# Agent orchestrator: Krillin/18 (internal), “Builder Agents” externally
+
+# End BBB 0
+

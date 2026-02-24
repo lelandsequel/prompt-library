@@ -6,7 +6,7 @@ import {
   CheckCircle, Wand2, Shield, Zap, LayoutGrid,
   Code, FileText, Settings, Lock, Copy, Check,
   ChevronDown, Sparkles, X, PenLine, Search,
-  PanelLeft, Layers, Terminal as TerminalIcon
+  PanelLeft, Layers, Terminal as TerminalIcon, Rocket, Package
 } from 'lucide-react';
 import { templates, llmPresets, categories, Template, LLMPreset, TemplateVariable } from '@/data/templates';
 import { useTheme, Theme } from '@/context/ThemeContext';
@@ -114,6 +114,12 @@ function BrutalistHeader({ activeMode, setActiveMode, theme, setTheme, onHelp }:
           className={activeMode === 'custom' ? 'active' : ''}
         >
           [CUSTOM_PROMPT]
+        </button>
+        <button
+          onClick={() => setActiveMode('ship')}
+          className={activeMode === 'ship' ? 'active' : ''}
+        >
+          [SHIP]
         </button>
       </div>
     </header>
@@ -230,6 +236,13 @@ function MinimalHeader({ activeMode, setActiveMode, theme, setTheme, onHelp }: a
           <PenLine className="w-4 h-4" />
           Custom Prompt
         </button>
+        <button
+          onClick={() => setActiveMode('ship')}
+          className={activeMode === 'ship' ? 'active' : ''}
+        >
+          <Rocket className="w-4 h-4" />
+          Ship
+        </button>
       </div>
     </header>
   );
@@ -338,6 +351,12 @@ function TerminalHeader({ activeMode, setActiveMode, theme, setTheme, onHelp }: 
           className={activeMode === 'custom' ? 'active' : ''}
         >
           ▶ optimize/
+        </button>
+        <button
+          onClick={() => setActiveMode('ship')}
+          className={activeMode === 'ship' ? 'active' : ''}
+        >
+          ▶ ship/
         </button>
       </div>
     </header>
@@ -450,7 +469,7 @@ function TerminalVariableInput({ variable, value, onChange }: any) {
 export default function PromptLibrary() {
   const { theme, setTheme } = useTheme();
   const [showGuide, setShowGuide] = useState(false);
-  const [activeMode, setActiveMode] = useState<'templates' | 'custom'>('templates');
+  const [activeMode, setActiveMode] = useState<'templates' | 'custom' | 'ship'>('templates');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedLLM, setSelectedLLM] = useState<LLMPreset>(llmPresets[0]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -466,6 +485,16 @@ export default function PromptLibrary() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeError, setOptimizeError] = useState('');
   const [copiedOptimized, setCopiedOptimized] = useState(false);
+
+  // Ship mode state
+  const [shipPrompt, setShipPrompt] = useState('');
+  const [shipPlan, setShipPlan] = useState<any>(null);
+  const [isPlanningShip, setIsPlanningShip] = useState(false);
+  const [isExecutingShip, setIsExecutingShip] = useState(false);
+  const [shipError, setShipError] = useState('');
+  const [shipResult, setShipResult] = useState<any>(null);
+  const [isEditingPlan, setIsEditingPlan] = useState(false);
+  const [editedPrompt, setEditedPrompt] = useState('');
 
   const filteredTemplates = useMemo(() => {
     return templates.filter(template => {
@@ -531,6 +560,67 @@ export default function PromptLibrary() {
     await navigator.clipboard.writeText(optimizedPrompt);
     setCopiedOptimized(true);
     setTimeout(() => setCopiedOptimized(false), 2000);
+  };
+
+  // Ship mode functions
+  const planShip = async () => {
+    const promptToUse = isEditingPlan ? editedPrompt : shipPrompt;
+    if (!promptToUse.trim()) return;
+    
+    setIsPlanningShip(true);
+    setShipError('');
+    setShipPlan(null);
+    setShipResult(null);
+    
+    try {
+      const response = await fetch('/api/ship/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptToUse })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to generate plan');
+      setShipPlan(data.plan);
+      setIsEditingPlan(false);
+    } catch (err) {
+      setShipError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsPlanningShip(false);
+    }
+  };
+
+  const executeShip = async () => {
+    if (!shipPlan) return;
+    
+    setIsExecutingShip(true);
+    setShipError('');
+    
+    try {
+      const response = await fetch('/api/ship/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: shipPlan, prompt: shipPrompt })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to execute plan');
+      setShipResult(data);
+    } catch (err) {
+      setShipError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsExecutingShip(false);
+    }
+  };
+
+  const startEditPlan = () => {
+    setIsEditingPlan(true);
+    setEditedPrompt(shipPrompt);
+  };
+
+  const cancelShip = () => {
+    setShipPlan(null);
+    setShipResult(null);
+    setIsEditingPlan(false);
+    setEditedPrompt('');
   };
 
   // Render appropriate header based on theme
@@ -771,6 +861,243 @@ export default function PromptLibrary() {
     );
   };
 
+  // Render ship mode
+  const renderShipMode = () => {
+    return (
+      <div className={`custom-panel ${theme}`}>
+        <div className={`custom-header ${theme}`}>
+          <Rocket className="w-6 h-6" />
+          <div>
+            <h2>Ship Mode</h2>
+            <p>Describe what you want to build in plain English</p>
+          </div>
+        </div>
+
+        <div className={`custom-form ${theme}`}>
+          {!shipPlan && !isEditingPlan && (
+            <>
+              <div className="form-field">
+                <label>What do you want to build?</label>
+                <textarea
+                  value={shipPrompt}
+                  onChange={(e) => setShipPrompt(e.target.value)}
+                  placeholder="E.g., A simple todo app with local storage, a markdown editor with live preview, etc..."
+                  rows={8}
+                  className={`prompt-input ${theme}`}
+                  style={{ fontSize: '16px' }}
+                />
+              </div>
+
+              <button
+                onClick={planShip}
+                disabled={!shipPrompt.trim() || isPlanningShip}
+                className={`optimize-btn ${theme}`}
+              >
+                {isPlanningShip ? (
+                  <><div className="spinner" /> Planning...</>
+                ) : (
+                  <><Sparkles className="w-5 h-5" /> Plan it ✨</>
+                )}
+              </button>
+            </>
+          )}
+
+          {isEditingPlan && (
+            <>
+              <div className="form-field">
+                <label>Edit your request</label>
+                <textarea
+                  value={editedPrompt}
+                  onChange={(e) => setEditedPrompt(e.target.value)}
+                  placeholder="Refine what you want to build..."
+                  rows={6}
+                  className={`prompt-input ${theme}`}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={planShip}
+                  disabled={!editedPrompt.trim() || isPlanningShip}
+                  className={`optimize-btn ${theme}`}
+                  style={{ flex: 1 }}
+                >
+                  {isPlanningShip ? (
+                    <><div className="spinner" /> Re-planning...</>
+                  ) : (
+                    <><Sparkles className="w-5 h-5" /> Re-plan</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsEditingPlan(false)}
+                  className={`optimize-btn ${theme}`}
+                  style={{ flex: 0, opacity: 0.7 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
+
+          {shipError && <div className={`error-msg ${theme}`}>{shipError}</div>}
+
+          {shipPlan && !isEditingPlan && (
+            <div className={`optimized-result ${theme}`}>
+              <div className={`result-header ${theme}`}>
+                <Package className="w-5 h-5" />
+                <h3>Build Plan</h3>
+              </div>
+              
+              <div className="ship-plan-content" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7 }}>Objective</h4>
+                  <p style={{ margin: 0 }}>{shipPlan.objective}</p>
+                </div>
+
+                {shipPlan.architecture && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7 }}>Architecture</h4>
+                    <p style={{ margin: 0 }}>{shipPlan.architecture}</p>
+                  </div>
+                )}
+
+                {shipPlan.tech && shipPlan.tech.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7 }}>Tech Stack</h4>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {shipPlan.tech.map((tech: string, i: number) => (
+                        <span key={i} className={`minimal-tag`} style={{ margin: 0 }}>{tech}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {shipPlan.steps && shipPlan.steps.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7 }}>Steps</h4>
+                    <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {shipPlan.steps.map((step: string, i: number) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {shipPlan.files_to_create && shipPlan.files_to_create.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7 }}>Files to Create</h4>
+                    <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', fontFamily: 'monospace' }}>
+                      {shipPlan.files_to_create.map((file: string, i: number) => (
+                        <li key={i}>{file}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
+                  {shipPlan.estimated_complexity && (
+                    <div>
+                      <span style={{ opacity: 0.7 }}>Complexity: </span>
+                      <strong>{shipPlan.estimated_complexity}</strong>
+                    </div>
+                  )}
+                  {shipPlan.estimated_time && (
+                    <div>
+                      <span style={{ opacity: 0.7 }}>Time: </span>
+                      <strong>{shipPlan.estimated_time}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {shipPlan.assumptions && shipPlan.assumptions.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7 }}>Assumptions</h4>
+                    <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px' }}>
+                      {shipPlan.assumptions.map((assumption: string, i: number) => (
+                        <li key={i}>{assumption}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {shipPlan.risks && shipPlan.risks.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '14px', opacity: 0.7, color: '#f59e0b' }}>Risks</h4>
+                    <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px' }}>
+                      {shipPlan.risks.map((risk: string, i: number) => (
+                        <li key={i}>{risk}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                <button
+                  onClick={executeShip}
+                  disabled={isExecutingShip}
+                  className={`optimize-btn ${theme}`}
+                  style={{ flex: 1 }}
+                >
+                  {isExecutingShip ? (
+                    <><div className="spinner" /> Shipping...</>
+                  ) : (
+                    <><Rocket className="w-5 h-5" /> Ship it! 🚀</>
+                  )}
+                </button>
+                <button
+                  onClick={startEditPlan}
+                  className={`optimize-btn ${theme}`}
+                  style={{ flex: 0, opacity: 0.8 }}
+                >
+                  <PenLine className="w-4 h-4" /> Edit
+                </button>
+                <button
+                  onClick={cancelShip}
+                  className={`optimize-btn ${theme}`}
+                  style={{ flex: 0, opacity: 0.7 }}
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {shipResult && (
+            <div className={`optimized-result ${theme}`} style={{ marginTop: '16px' }}>
+              <div className={`result-header ${theme}`}>
+                <CheckCircle className="w-5 h-5" style={{ color: '#10b981' }} />
+                <h3>Execution Result</h3>
+              </div>
+              <div style={{ padding: '16px' }}>
+                <p style={{ margin: 0, marginBottom: '12px', fontSize: '15px', fontWeight: 600 }}>{shipResult.message}</p>
+                {shipResult.projectDir && (
+                  <p style={{ margin: '8px 0', fontSize: '13px', fontFamily: 'monospace', opacity: 0.8 }}>
+                    📁 {shipResult.projectDir}
+                  </p>
+                )}
+                {shipResult.filesCreated?.length > 0 && (
+                  <div style={{ marginTop: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 600 }}>Files created:</p>
+                    <div style={{ fontSize: '12px', fontFamily: 'monospace', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', padding: '8px 12px', maxHeight: '150px', overflow: 'auto' }}>
+                      {shipResult.filesCreated.map((f: string, i: number) => <div key={i}>{f}</div>)}
+                    </div>
+                  </div>
+                )}
+                {shipResult.stdout && (
+                  <details style={{ marginTop: '12px' }}>
+                    <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Build output</summary>
+                    <pre style={{ fontSize: '11px', fontFamily: 'monospace', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', padding: '8px 12px', maxHeight: '200px', overflow: 'auto', whiteSpace: 'pre-wrap' }}>{shipResult.stdout}</pre>
+                  </details>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`app-container ${theme}`}>
       {renderHeader()}
@@ -780,8 +1107,10 @@ export default function PromptLibrary() {
             {renderTemplatesPanel()}
             {renderFormPanel()}
           </div>
-        ) : (
+        ) : activeMode === 'custom' ? (
           renderCustomMode()
+        ) : (
+          renderShipMode()
         )}
       </main>
       <Footer theme={theme} />

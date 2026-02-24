@@ -1,0 +1,92 @@
+# BBB 13 — Workspace + Project Model
+# Goal: BuilderOS understands and manages projects/workspaces natively
+
+################################################################################
+# 1) Workspace Concept
+################################################################################
+
+Workspace = root folder containing BuilderOS projects
+
+.builderos/workspace.json
+
+{
+  "projects": [
+    {
+      "name": "app1",
+      "path": "./app1"
+    }
+  ]
+}
+
+################################################################################
+# 2) Project Model
+################################################################################
+
+Project {
+  name
+  path
+  stack
+  desks[]
+  prompts[]
+  created_at
+}
+
+Stored in:
+
+project/.builderos/project.json
+
+################################################################################
+# 3) Project Init
+################################################################################
+
+builderos project init:
+
+- create .builderos/
+- create project.json
+- register in workspace
+
+################################################################################
+# 4) CLI
+################################################################################
+
+builderos project list
+builderos project open {name}
+builderos project init
+
+################################################################################
+# 5) VS Code Integration
+################################################################################
+
+Extension loads:
+
+workspace.json
+project.json
+
+Sidebar → Projects view:
+
+- list projects
+- select active
+
+################################################################################
+# 6) Active Project Context
+################################################################################
+
+All runs/agents/prompts scoped to:
+
+active_project
+
+################################################################################
+# 7) MVP Scope
+################################################################################
+
+✔ workspace file  
+✔ project model  
+✔ CLI project commands  
+✔ VS Code project list  
+
+✘ multi-root workspaces  
+✘ remote workspaces  
+
+################################################################################
+# End BBB 13
+################################################################################

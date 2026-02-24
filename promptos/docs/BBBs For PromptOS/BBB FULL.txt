@@ -1,0 +1,366 @@
+# JourdanLabs BuilderOS — FULL MONTE Architecture (High-Level Master Spec)
+# Audience: Android 18 (lead) + spawned helper agents
+# Goal: Take BuilderOS from “working local MVP” → “real product platform”
+# Approach: Modular, local-first, VS Code extension/distribution first, optional fork later
+
+################################################################################
+# 0) NORTH STAR
+################################################################################
+# BuilderOS is an agent-native Factory IDE:
+# - Versioned prompts + enforced policies
+# - Multi-agent pipelines (plan→generate→test→deploy→verify)
+# - Reusable templates (Desks) + Marketplace
+# - Full provenance + audit trails
+# - Team mode (RBAC) + environments (dev/stage/prod)
+# - Observability + evals + rollback
+# Outcome: Ship products 10× faster with receipts.
+
+################################################################################
+# 1) PRINCIPLES (non-negotiables)
+################################################################################
+# P1: Local-first (works offline); cloud sync optional
+# P2: Reproducible runs (same inputs → same outputs)
+# P3: Provenance everywhere (prompt version + agent + tool trace + commit)
+# P4: Deny-by-default security (policy gates for tools, network, secrets, deploy)
+# P5: Human-in-the-loop approvals for destructive actions
+# P6: VS Code compatibility (extension first; fork only if UX requires)
+# P7: Minimal lock-in (export/import prompts, runs, desks)
+
+################################################################################
+# 2) SYSTEM OVERVIEW (major subsystems)
+################################################################################
+# UI: VS Code Extension + Panels + Commands
+# CLI: builderos-cli (local orchestrator + project ops)
+# Core Runtime:
+#   - PromptOS (prompt versioning + policy)
+#   - ShipMachine (pipelines + execution + provenance)
+#   - Orchestrator (multi-agent)
+# Templates:
+#   - Desk OS (desks + manifests + scaffolds)
+# Storage:
+#   - Local state (.builderos/)
+#   - Optional Cloud backend (team mode)
+# Integrations:
+#   - GitHub/GitLab
+#   - Supabase/Postgres
+#   - Deploy providers (Vercel/Fly/Render/AWS)
+# Observability:
+#   - Logs/metrics/traces + Sentry/PostHog
+# Quality:
+#   - Prompt evals + golden tests + CI integration
+# Marketplace:
+#   - Desk marketplace + Agent packs + Pipeline packs
+
+################################################################################
+# 3) DATA MODEL (canonical entities)
+################################################################################
+# Workspace { id, name, projects[] }
+# Project { id, name, path, stack, envs[], desks[], prompts[], created_at }
+# Prompt { id, name, version, spec_yaml, tags[], owner, created_at }
+# Policy { id, scope(project/env/agent), rules, approvals, created_at }
+# Agent { id, name, role, prompt_ref, toolset, memory_profile }
+# Pipeline { id, name, steps[], triggers, created_at }
+# Run { id, project_id, pipeline_id, status, started_at, ended_at, steps[], provenance }
+# Step { id, run_id, agent_id, action, status, start, end, logs_ref, artifacts_ref, policy_events }
+# Artifact { id, run_id, path, type, hash, created_by_prompt, created_by_agent }
+# Deployment { id, run_id, provider, env, url, status, logs_ref }
+# EvalSuite { id, prompt_ref, tests[], results[] }
+# SecretRef { id, provider, key_name, scope, never_log=true }
+
+################################################################################
+# 4) LOCAL STATE LAYOUT (single source of truth in MVP)
+################################################################################
+# project_root/
+#   builderos.yaml                 # project config
+#   builderos.policy.yaml          # policy config
+#   prompts/                       # prompt specs (optional; registry local)
+#   desks/                         # desk manifests (optional)
+#   ship/                          # pipeline definitions
+#   .builderos/
+#     project.json
+#     runs/{run_id}.json
+#     artifacts/{run_id}/...
+#     logs/{run_id}/...
+#     memory/{agent}.json
+#     prompts/{name}@{ver}.yaml
+#     evals/{suite_id}/results.json
+#     cache/
+
+################################################################################
+# 5) SECURITY + POLICY (deny-by-default)
+################################################################################
+# Core policy features:
+# - tool allowlist per agent
+# - path allow/deny (filesystem sandbox)
+# - network allowlist (domains)
+# - secret redaction
+# - destructive ops require approvals:
+#   - git push to main
+#   - deploy prod
+#   - db migrations to prod
+#   - deleting files outside workspace
+# Approval workflow:
+# - step emits ApprovalRequest
+# - UI shows diff + reason + risk
+# - user Approve / Deny
+# - approval recorded in provenance
+
+################################################################################
+# 6) PROMPTOS (prompt lifecycle + evals)
+################################################################################
+# Prompt versioning:
+# - semver required
+# - changelog required
+# - “latest” alias
+# Prompt packaging:
+# - prompts exported as bundles (promptpack.zip)
+# Prompt eval harness:
+# - test cases: input → expected artifacts or invariants
+# - golden outputs stored per version
+# - regression checks for:
+#   - compile success
+#   - lint/test pass
+#   - output format invariants
+# Integrations:
+# - run evals locally
+# - run evals in CI (GitHub Actions)
+
+################################################################################
+# 7) SHIPMACHINE (pipeline engine)
+################################################################################
+# Pipeline definition format:
+# pipeline.yaml
+# steps: list of (agent, action, tools, gates, retries, timeout)
+#
+# Standard pipeline templates:
+# - feature_pipeline: plan→generate→test→pr→deploy_preview→verify
+# - hotfix_pipeline: plan→patch→test→deploy_prod (with approvals)
+# - data_pipeline: ingest→normalize→validate→publish
+#
+# Runtime features:
+# - step retries with backoff
+# - timeouts
+# - checkpoints
+# - resumable runs
+# - parallel execution (phase lanes)
+# - artifact caching
+
+################################################################################
+# 8) ORCHESTRATION (multi-agent at scale)
+################################################################################
+# Agent roles packs:
+# - Builder: code generation and refactors
+# - Tester: writes tests, runs suites, fixes failures
+# - DocWriter: docs, README, changelog
+# - Reviewer: diffs, risk analysis, policy compliance
+# - Deployer: deploy flows, monitors, rollback
+# - DataEngineer: pipelines, schemas, migrations
+#
+# Orchestrator features:
+# - sequential and parallel steps
+# - shared context bus:
+#   - artifacts, logs, decisions, open questions
+# - escalation:
+#   - when blocked → request human input
+# - consensus option:
+#   - 2 agents propose, Reviewer selects best
+
+################################################################################
+# 9) AGENT MEMORY (beyond local JSON)
+################################################################################
+# Memory tiers:
+# - short-term: current run context
+# - episodic: run summaries
+# - semantic: structured facts about project
+# - vector: embeddings for retrieval
+#
+# MVP+:
+# - pgvector (local or Supabase)
+# - retrieval policies:
+#   - only pull top-k relevant
+#   - redact secrets
+# - memory hygiene:
+#   - TTL for ephemeral notes
+#   - pin important facts
+
+################################################################################
+# 10) UX (what makes it feel like a product)
+################################################################################
+# Sidebar:
+# - Projects
+# - Desks
+# - Agents
+# - Runs
+# - Prompts
+# - Policies
+# - Deployments
+# - Marketplace
+#
+# Panels:
+# - Agent Console (chat + tool trace)
+# - Diff/Review (PR-like)
+# - Timeline (orchestration view)
+# - Artifact Browser
+# - Policy Gate / Approval screen
+# - Eval Dashboard (prompt performance)
+#
+# One “Killer UX” goal:
+# - Click run → see timeline + diff + artifacts + provenance + approve gates
+
+################################################################################
+# 11) INTEGRATIONS (adapters with common interface)
+################################################################################
+# Git interface:
+# - create branch
+# - commit artifacts
+# - push
+# - create PR
+# - comment with logs + artifacts + provenance
+#
+# Deploy interface:
+# - vercel deploy
+# - fly deploy
+# - render deploy
+# - aws deploy (later)
+#
+# DB interface:
+# - Supabase migrations
+# - schema introspection
+# - seed data
+#
+# Observability:
+# - Sentry init
+# - PostHog init
+# - log exporter
+
+################################################################################
+# 12) TEAM MODE (cloud backend)
+################################################################################
+# builderos-api provides:
+# - auth (magic link, oauth)
+# - orgs, projects, roles
+# - prompt registry shared
+# - run history shared
+# - policy distribution
+# - marketplace sync
+#
+# RBAC:
+# - Owner
+# - Admin
+# - Builder
+# - Reviewer
+# - Viewer
+#
+# Environments:
+# - dev
+# - stage
+# - prod
+#
+# Audit log:
+# - who approved what
+# - when
+# - what diff
+# - what prompt version
+
+################################################################################
+# 13) MARKETPLACE (the moat)
+################################################################################
+# Marketplace content types:
+# - Desks (templates)
+# - Agent Packs (roles + prompts + policies)
+# - Pipeline Packs (ShipMachine workflows)
+#
+# Monetization:
+# - per-seat subscription
+# - per-run credits
+# - marketplace revshare
+# - enterprise policy packs
+#
+# Trust:
+# - signed packs
+# - verified publisher badges
+# - sandboxed install
+
+################################################################################
+# 14) DISTRIBUTION (extension → branded build → fork)
+################################################################################
+# Phase A: VS Code extension (fast iteration)
+# Phase B: Branded distribution (Cursor-style) with auth/licensing
+# Phase C: Fork only if needed:
+#   - deeper editor integration
+#   - performance
+#   - custom extension marketplace
+#
+# Trigger for fork:
+# - extension limitations block core UX
+
+################################################################################
+# 15) QUALITY + RELEASE ENGINEERING
+################################################################################
+# CI checks:
+# - run unit tests
+# - run prompt evals
+# - lint
+# - build extension
+# - packaging integrity
+#
+# Release channels:
+# - nightly
+# - beta
+# - stable
+#
+# Telemetry (opt-in):
+# - run success rates
+# - step failures
+# - time-to-ship
+
+################################################################################
+# 16) ROADMAP (what helpers should build)
+################################################################################
+# Helper Agent A — “Platform Hardening”
+# - resumable runs
+# - parallel steps
+# - caching
+# - streaming logs
+#
+# Helper Agent B — “PromptOS + Evals”
+# - semver enforcement
+# - prompt diffs
+# - eval harness + dashboards
+# - CI integration
+#
+# Helper Agent C — “Policies + Approvals”
+# - approval request objects
+# - diff viewer
+# - env-scoped permissions
+#
+# Helper Agent D — “Marketplace”
+# - pack format (deskpack/agentpack)
+# - install/uninstall
+# - signing/verifying
+#
+# Helper Agent E — “Backend Team Mode”
+# - builderos-api skeleton
+# - auth + orgs + RBAC
+# - shared prompt registry
+
+################################################################################
+# 17) DEFINITION OF DONE (FULL MONTE)
+################################################################################
+# BuilderOS is “Full Monte Done” when:
+# - a team can install it
+# - apply a Desk
+# - run multi-agent pipeline
+# - pass tests
+# - open PR
+# - deploy preview
+# - request approvals for prod
+# - deploy prod
+# - monitor
+# - roll back
+# - with complete provenance/audit trail
+# - and prompts/evals are versioned and regressions are detectable
+
+################################################################################
+# END MASTER SPEC
+################################################################################

@@ -1,0 +1,40 @@
+# BBB 6 — Run + Provenance Model
+# Goal: Reproducible execution record
+
+Run {
+  id
+  pipeline
+  status
+  started_at
+  finished_at
+  steps[]
+  artifacts[]
+  prompts[]
+}
+
+StepRecord {
+  name
+  status
+  logs[]
+}
+
+Artifact {
+  path
+  hash
+  created_by_prompt
+}
+
+PromptRecord {
+  name
+  version
+  input_hash
+  output_hash
+}
+
+Storage:
+
+.builderos/runs/{run_id}.json
+
+################################################################################
+# End BBB 6
+################################################################################

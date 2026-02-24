@@ -1,0 +1,78 @@
+# BBB 2 — PromptOS Runtime Spec
+# Goal: Local-first prompt versioning + rendering + provenance for BuilderOS MVP
+
+################################################################################
+# 1) Prompt File Format
+################################################################################
+
+prompts/
+  builder.prompt.yaml
+
+builder.prompt.yaml:
+
+name: builder
+version: 0.1.0
+description: Builder agent that generates product scaffolds
+system: |
+  You are Builder, an autonomous software agent that generates and modifies
+  project files to implement requested features.
+
+user_template: |
+  TASK:
+  {{task}}
+
+  PROJECT CONTEXT:
+  {{project_context}}
+
+tools:
+  - filesystem.write
+  - filesystem.read
+  - shell.exec
+  - git.commit
+
+evals: []
+
+################################################################################
+# 2) PromptOS Runtime API
+################################################################################
+
+loadPrompt(name) → PromptSpec
+
+renderPrompt(prompt, vars) → string
+
+recordProvenance({
+  prompt_name,
+  prompt_version,
+  input_hash,
+  output_hash,
+  timestamp
+})
+
+################################################################################
+# 3) Provenance Storage
+################################################################################
+
+.builderos/prompts/{prompt_name}@{version}.json
+
+{
+  "name": "builder",
+  "version": "0.1.0",
+  "rendered_input": "...",
+  "output_hash": "...",
+  "artifacts": []
+}
+
+################################################################################
+# 4) MVP Scope
+################################################################################
+
+✔ load YAML
+✔ render template
+✔ record provenance
+✘ registry
+✘ remote sync
+✘ eval harness
+
+################################################################################
+# End BBB 2
+################################################################################

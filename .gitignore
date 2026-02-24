@@ -11,3 +11,5 @@ coverage/
 *.swp
 *.swo
 .next/
+.vercel
+builds/

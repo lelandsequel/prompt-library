@@ -1,0 +1,101 @@
+# BBB 10 — Multi-Agent Orchestration
+# Goal: Allow BuilderOS to coordinate multiple agents in one pipeline
+
+################################################################################
+# 1) Agent Model
+################################################################################
+
+Agent {
+  name
+  role
+  prompt
+  tools[]
+}
+
+Examples:
+
+builder
+tester
+doc_writer
+
+################################################################################
+# 2) Pipeline Agents
+################################################################################
+
+pipeline: builder_default
+
+steps:
+  - builder.generate
+  - tester.test
+  - doc_writer.docs
+
+################################################################################
+# 3) Orchestrator
+################################################################################
+
+core/orchestrator/
+
+orchestrator.ts
+
+runAgent(agent_name, task, context):
+
+load prompt
+execute
+capture artifacts/logs
+return result
+
+################################################################################
+# 4) Multi-Agent Pipeline Runner
+################################################################################
+
+for step in pipeline:
+
+agent = step.agent
+action = step.action
+
+result = runAgent(agent, action)
+
+append artifacts/logs
+
+################################################################################
+# 5) Context Passing
+################################################################################
+
+RunContext:
+  project_path
+  artifacts[]
+  logs[]
+  previous_outputs[]
+
+Each agent receives:
+
+- project files
+- prior artifacts
+- prior logs
+
+################################################################################
+# 6) Run Record
+################################################################################
+
+StepRecord {
+  agent
+  action
+  status
+  artifacts[]
+}
+
+################################################################################
+# 7) MVP Scope
+################################################################################
+
+✔ multiple agents per run  
+✔ shared context  
+✔ sequential execution  
+
+✘ parallel agents  
+✘ retries  
+✘ scheduling  
+
+################################################################################
+# End BBB 10
+################################################################################

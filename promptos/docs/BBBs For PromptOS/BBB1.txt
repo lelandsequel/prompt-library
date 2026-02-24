@@ -1,0 +1,256 @@
+# BuilderOS MVP — Execution Plan (Android 18)
+# Context: We’re moving PromptOS + ShipMachine into a VS Code extension → eventual IDE.
+# Goal: Working BuilderOS MVP that can spawn an agent and ship a small product end-to-end.
+
+################################################################################
+# 0) MVP Definition (very specific)
+################################################################################
+
+MVP SUCCESS = from inside VS Code:
+
+1) Apply Desk template
+2) Spawn Builder agent
+3) Run ShipMachine pipeline
+4) Generate files
+5) Commit + PR
+6) (optional) Deploy
+
+If this loop works → BuilderOS is real.
+
+################################################################################
+# 1) Repo Layout
+################################################################################
+
+builderos/
+  extension/              # VS Code extension
+  cli/                    # builderos CLI runtime
+  core/                   # PromptOS + ShipMachine runtime
+  desks/                  # Desk templates
+  examples/               # demo projects
+
+################################################################################
+# 2) Phase 1 — builderos CLI (local runtime)
+################################################################################
+
+Goal:
+CLI can run a pipeline and produce a Run with artifacts + logs.
+
+Commands:
+
+builderos init
+builderos desk apply saas
+builderos agent run builder
+builderos ship run
+builderos run inspect
+
+Implementation:
+
+cli/
+  main.ts
+  commands/
+    init.ts
+    desk_apply.ts
+    agent_run.ts
+    ship_run.ts
+    run_inspect.ts
+
+Run object schema:
+
+Run {
+  id
+  pipeline
+  status
+  steps[]
+  artifacts[]
+  logs[]
+  started_at
+  finished_at
+}
+
+Store locally:
+.builderos/runs/{run_id}.json
+
+################################################################################
+# 3) Phase 2 — ShipMachine Core (minimal)
+################################################################################
+
+Pipeline steps:
+
+plan → generate → test → package
+
+core/shipmachine/
+
+pipeline.ts
+steps/
+  plan.ts
+  generate.ts
+  test.ts
+  package.ts
+
+generate.ts:
+- call PromptOS
+- write files
+- record artifacts
+
+Artifacts:
+
+Artifact {
+  path
+  type
+  hash
+  created_by_prompt
+}
+
+################################################################################
+# 4) Phase 3 — PromptOS Local
+################################################################################
+
+prompts/
+  builder.prompt.yaml
+
+PromptSpec:
+name
+version
+system
+user_template
+tools
+evals
+
+PromptOS functions:
+
+loadPrompt()
+renderPrompt()
+recordProvenance()
+
+################################################################################
+# 5) Phase 4 — Desk Template (first)
+################################################################################
+
+desks/saas/
+
+desk.json
+files/
+  app/
+  supabase/
+  README.md
+
+desk.json:
+
+{
+  "name": "saas",
+  "version": "0.1",
+  "prompts": ["builder"],
+  "scaffold": "files/"
+}
+
+CLI:
+
+builderos desk apply saas
+
+→ copies scaffold into workspace
+→ registers desk in builderos.yaml
+
+################################################################################
+# 6) Phase 5 — VS Code Extension UI
+################################################################################
+
+extension/
+
+views:
+  Agents
+  Desks
+  Runs
+
+Commands:
+
+BuilderOS: Apply Desk
+BuilderOS: Spawn Agent
+BuilderOS: Run Ship
+BuilderOS: Inspect Run
+
+Implementation:
+
+extension.ts:
+- call CLI via child_process
+- read .builderos state
+- render panels
+
+Panels:
+
+Agents:
+- select agent
+- run
+
+Runs:
+- list runs
+- click → show logs + artifacts
+
+################################################################################
+# 7) Phase 6 — GitHub Adapter
+################################################################################
+
+core/git/
+
+create_branch.ts
+commit.ts
+create_pr.ts
+
+ShipMachine package step:
+
+if git repo:
+  create branch
+  commit artifacts
+  push
+  open PR
+
+################################################################################
+# 8) Phase 7 — Demo Flow
+################################################################################
+
+User in VS Code:
+
+Command → BuilderOS: Apply Desk → saas
+
+Command → BuilderOS: Spawn Agent → builder
+
+Command → BuilderOS: Run Ship
+
+ShipMachine:
+- plan
+- generate app files
+- test
+- package
+- git commit + PR
+
+User clicks Run → sees artifacts + logs
+
+################################################################################
+# 9) Definition of Done
+################################################################################
+
+DONE when:
+
+- Desk applies
+- Agent generates files
+- Run recorded
+- PR created
+- UI shows run + artifacts
+
+That’s BuilderOS MVP.
+
+################################################################################
+# 10) After MVP
+################################################################################
+
+Next:
+
+- Prompt versioning
+- Policies
+- Deploy adapter
+- Multiple agents
+- Provenance graph
+- Team backend
+
+################################################################################
+# End
+################################################################################

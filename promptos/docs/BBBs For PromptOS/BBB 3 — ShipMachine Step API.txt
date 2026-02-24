@@ -1,0 +1,77 @@
+# BBB 3 — ShipMachine Step API
+# Goal: Minimal pipeline engine for BuilderOS MVP
+
+################################################################################
+# 1) Pipeline Definition
+################################################################################
+
+pipeline: builder_default
+
+steps:
+  - plan
+  - generate
+  - test
+  - package
+
+################################################################################
+# 2) Step Interface
+################################################################################
+
+interface Step {
+  name: string
+  run(context: RunContext): StepResult
+}
+
+RunContext {
+  project_path
+  promptos
+  artifacts[]
+  logs[]
+}
+
+StepResult {
+  status: "success" | "fail"
+  artifacts[]
+  logs[]
+}
+
+################################################################################
+# 3) Core Steps
+################################################################################
+
+plan:
+  - read project
+  - decide task
+  - log plan
+
+generate:
+  - load builder prompt
+  - call LLM
+  - write files
+  - record artifacts
+
+test:
+  - run npm test or equivalent
+  - capture output
+
+package:
+  - git add
+  - git commit
+  - optional PR
+
+################################################################################
+# 4) Pipeline Runner
+################################################################################
+
+runPipeline(name):
+
+for step in steps:
+  result = step.run(context)
+  append logs/artifacts
+  if fail → stop
+
+saveRun()
+
+################################################################################
+# End BBB 3
+################################################################################
