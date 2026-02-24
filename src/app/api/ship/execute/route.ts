@@ -11,80 +11,67 @@ export async function POST(request: Request) {
       );
     }
 
-    // On Vercel, we can't spawn ShipMachine locally.
-    // Return the plan confirmation with a note to use CLI for full execution.
-    if (process.env.VERCEL) {
+    // On Vercel (or any env without local ShipMachine), return cloud mode response
+    if (process.env.VERCEL || !process.env.SHIPMACHINE_LOCAL) {
       return NextResponse.json({
         success: true,
-        message: 'Plan approved! Use `shipmachine ship` locally to execute builds.',
+        message: 'Plan approved! Use ShipMachine locally to execute builds.',
         cloudMode: true,
         plan,
       });
     }
 
-    // Local execution: spawn ShipMachine CLI
-    const { spawn } = await import('child_process');
-    const path = await import('path');
-    const fs = await import('fs');
+    // Local-only: shell out to shipmachine CLI via exec
+    // This avoids any static imports that Turbopack would try to resolve
+    const { execSync } = await import('child_process');
+    const { mkdirSync, writeFileSync, readdirSync, statSync } = await import('fs');
+    const { join, resolve } = await import('path');
 
-    const BUILDS_DIR = path.resolve(process.cwd(), 'builds');
-    const SHIPMACHINE_CLI = path.resolve(process.cwd(), '..', 'zeroclaw-shipmachine', 'cli', 'index.js');
-
+    const buildsDir = resolve(process.cwd(), 'builds');
     const slug = (plan.objective || prompt)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 50);
     const timestamp = Date.now();
-    const projectDir = path.join(BUILDS_DIR, `${slug}-${timestamp}`);
-    fs.mkdirSync(projectDir, { recursive: true });
+    const projectDir = join(buildsDir, `${slug}-${timestamp}`);
+    mkdirSync(projectDir, { recursive: true });
 
-    fs.writeFileSync(
-      path.join(projectDir, 'PLAN.md'),
+    writeFileSync(
+      join(projectDir, 'PLAN.md'),
       `# Build Plan\n\n**Objective:** ${plan.objective}\n\n**Architecture:** ${plan.architecture || 'N/A'}\n\n**Tech:** ${(plan.tech || []).join(', ')}\n\n**Style:** ${plan.style || 'N/A'}\n\n## Steps\n${(plan.steps || []).map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}\n\n## Files to Create\n${(plan.files_to_create || []).map((f: string) => `- ${f}`).join('\n')}\n`
     );
 
-    if (!fs.existsSync(path.join(projectDir, 'package.json'))) {
-      fs.writeFileSync(
-        path.join(projectDir, 'package.json'),
-        JSON.stringify({ name: slug, version: '0.1.0', private: true }, null, 2)
-      );
+    writeFileSync(
+      join(projectDir, 'package.json'),
+      JSON.stringify({ name: slug, version: '0.1.0', private: true }, null, 2)
+    );
+
+    const objective = (plan.objective || prompt).replace(/"/g, '\\"');
+    const cmd = `node "${resolve(process.cwd(), '..', 'zeroclaw-shipmachine', 'cli', 'index.js')}" run-task --objective "${objective}" --repo "${projectDir}" 2>&1`;
+
+    let stdout = '';
+    let success = false;
+    try {
+      stdout = execSync(cmd, {
+        timeout: 300_000,
+        env: { ...process.env, NO_COLOR: '1' },
+        maxBuffer: 10 * 1024 * 1024,
+      }).toString();
+      success = true;
+    } catch (err: unknown) {
+      const e = err as { stdout?: Buffer; stderr?: Buffer };
+      stdout = (e.stdout?.toString() || '') + (e.stderr?.toString() || '');
     }
 
-    const objective = plan.objective || prompt;
-
-    const result = await new Promise<{ success: boolean; stdout: string; stderr: string; code: number | null }>((resolve) => {
-      let stdout = '';
-      let stderr = '';
-
-      const proc = spawn('node', [
-        SHIPMACHINE_CLI,
-        'run-task',
-        '--objective', objective,
-        '--repo', projectDir,
-      ], {
-        cwd: projectDir,
-        env: {
-          ...process.env,
-          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-          NO_COLOR: '1',
-        },
-        timeout: 300_000,
-      });
-
-      proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
-      proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
-      proc.on('close', (code: number | null) => resolve({ success: code === 0, stdout, stderr, code }));
-      proc.on('error', (err: Error) => resolve({ success: false, stdout, stderr: err.message, code: null }));
-    });
-
+    // Walk files
     const filesCreated: string[] = [];
     const walk = (dir: string, prefix = '') => {
       try {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
           if (entry.name === 'node_modules' || entry.name === '.git') continue;
           const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
-          if (entry.isDirectory()) walk(path.join(dir, entry.name), rel);
+          if (entry.isDirectory()) walk(join(dir, entry.name), rel);
           else filesCreated.push(rel);
         }
       } catch { /* ignore */ }
@@ -92,14 +79,13 @@ export async function POST(request: Request) {
     walk(projectDir);
 
     return NextResponse.json({
-      success: result.success,
-      message: result.success
+      success,
+      message: success
         ? `Build complete! Project at builds/${slug}-${timestamp}`
-        : `Build finished with code ${result.code}`,
+        : `Build finished. Check output for details.`,
       projectDir: `builds/${slug}-${timestamp}`,
       filesCreated,
-      stdout: result.stdout.slice(-3000),
-      stderr: result.stderr.slice(-1000),
+      stdout: stdout.slice(-3000),
       plan,
     });
   } catch (error) {
